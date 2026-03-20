@@ -1,10 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPS + AHRS</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <h1>📡 GPS + AHRS</h1>
+
+  <button id="startBtn">Start Sensors</button>
+
+  <div class="card">
+    <h2>📍 GPS</h2>
+    <p>Latitude: <span id="lat">-</span></p>
+    <p>Longitude: <span id="lon">-</span></p>
+    <p>Accuracy: <span id="acc">-</span> m</p>
+  </div>
+
+  <div class="card">
+    <h2>🧭 Orientation</h2>
+    <p>Alpha: <span id="alpha">-</span></p>
+    <p>Beta: <span id="beta">-</span></p>
+    <p>Gamma: <span id="gamma">-</span></p>
+  </div>
+
+  <div class="card">
+    <h2>🧭 Compass</h2>
+    <p>Heading: <span id="heading">-</span>°</p>
+  </div>
+
+  <!-- IMPORTANT: script at the bottom -->
+  <script src="script.js"></script>
 
 </body>
 </html>
