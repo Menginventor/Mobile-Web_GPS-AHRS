@@ -1,30 +1,55 @@
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
+  font-family: system-ui, -apple-system, sans-serif;
   background: #0f172a;
   color: #e2e8f0;
   margin: 0;
-  padding: 20px;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Container for everything */
+.container {
+  width: 100%;
+  max-width: 420px;   /* KEY: prevents wide layout */
 }
 
 h1 {
-  margin-bottom: 20px;
+  font-size: 20px;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 button {
-  padding: 12px 20px;
+  width: 100%;
+  padding: 14px;
   font-size: 16px;
-  margin-bottom: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   background: #22c55e;
   color: white;
+  margin-bottom: 15px;
 }
 
 .card {
   background: #1e293b;
-  margin: 15px auto;
-  padding: 15px;
-  border-radius: 12px;
-  max-width: 400px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.card h2 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+p {
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+#headingBig {
+  font-size: 36px;
+  margin: 5px 0;
+  text-align: center;
 }
