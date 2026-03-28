@@ -123,7 +123,7 @@ function getCameraRPY(qx, qy, qz, qw) {
 
   // ---- compute RPY ----
   let yaw = Math.atan2(fx_w, fy_w);
-  let pitch = Math.asin(-fz_w);
+  let pitch = -Math.asin(-fz_w);
   let roll = Math.atan2(ux_w, uy_w);
 
   return {
