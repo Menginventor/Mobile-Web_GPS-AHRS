@@ -1,7 +1,12 @@
 const startBtn = document.getElementById("startBtn");
+const toggleARBtn = document.getElementById("toggleARBtn");
+
+let sensor = null;
+let cameraStream = null;
+let arEnabled = false;
 
 // ==========================
-// START BUTTON
+// START BUTTON (SENSORS)
 // ==========================
 startBtn.addEventListener("click", async () => {
 
@@ -20,6 +25,56 @@ startBtn.addEventListener("click", async () => {
 
 
 // ==========================
+// CAMERA TOGGLE
+// ==========================
+toggleARBtn.addEventListener("click", async () => {
+
+  const video = document.getElementById("camera");
+
+  if (!arEnabled) {
+    await startCamera();
+    video.classList.remove("hidden");
+    toggleARBtn.textContent = "Disable AR";
+    arEnabled = true;
+  } else {
+    stopCamera();
+    video.classList.add("hidden");
+    toggleARBtn.textContent = "Enable AR";
+    arEnabled = false;
+  }
+
+});
+
+
+// ==========================
+// CAMERA FUNCTIONS
+// ==========================
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+
+    const video = document.getElementById("camera");
+    video.srcObject = cameraStream;
+
+  } catch (err) {
+    console.error("Camera error:", err);
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+
+  const video = document.getElementById("camera");
+  video.srcObject = null;
+}
+
+
+// ==========================
 // GPS
 // ==========================
 function startGPS() {
@@ -29,8 +84,11 @@ function startGPS() {
   }
 
   navigator.geolocation.watchPosition((pos) => {
-    document.getElementById("lat").textContent = pos.coords.latitude.toFixed(6);
-    document.getElementById("lon").textContent = pos.coords.longitude.toFixed(6);
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    document.getElementById("lat").textContent = lat.toFixed(6);
+    document.getElementById("lon").textContent = lon.toFixed(6);
     document.getElementById("acc").textContent = pos.coords.accuracy.toFixed(2);
     document.getElementById("alt").textContent =
       pos.coords.altitude ? pos.coords.altitude.toFixed(2) : "-";
@@ -41,9 +99,9 @@ function startGPS() {
 // ==========================
 // QUATERNION SENSOR
 // ==========================
-let sensor = null;
-
 function startQuaternionSensor() {
+  if (sensor) return;
+
   try {
     sensor = new AbsoluteOrientationSensor({
       frequency: 60,
@@ -51,57 +109,50 @@ function startQuaternionSensor() {
     });
 
     sensor.addEventListener("reading", () => {
-      const q = sensor.quaternion; // [x, y, z, w]
+      const q = sensor.quaternion;
 
       const qx = q[0];
       const qy = q[1];
       const qz = q[2];
       const qw = q[3];
 
-      // Display quaternion
       document.getElementById("qx").textContent = qx.toFixed(4);
       document.getElementById("qy").textContent = qy.toFixed(4);
       document.getElementById("qz").textContent = qz.toFixed(4);
       document.getElementById("qw").textContent = qw.toFixed(4);
 
-      // Compute camera RPY
       const rpy = getCameraRPY(qx, qy, qz, qw);
 
       document.getElementById("yaw").textContent = rpy.yaw.toFixed(1);
       document.getElementById("pitch").textContent = rpy.pitch.toFixed(1);
       document.getElementById("roll").textContent = rpy.roll.toFixed(1);
 
-      // Use yaw as heading
       document.getElementById("heading").textContent = rpy.yaw.toFixed(1);
       document.getElementById("headingBig").textContent =
         rpy.yaw.toFixed(0) + "°";
     });
 
-    sensor.addEventListener("error", (event) => {
-      console.error("Sensor error:", event.error.name);
-    });
-
     sensor.start();
 
   } catch (err) {
-    console.warn("AbsoluteOrientationSensor not supported:", err);
-    alert("Quaternion sensor not supported on this device/browser.");
+    console.warn("Sensor not supported:", err);
+    alert("Orientation sensor not supported");
   }
 }
 
 
 // ==========================
-// CAMERA RPY (CRITICAL PART)
+// CAMERA RPY
 // ==========================
 function getCameraRPY(qx, qy, qz, qw) {
 
-  // Camera forward (back camera)
-  let fx = 0, fy = 0, fz = -1;
+  // Forward vector
+  let fx = 0, fy = 0, fz = 1;
 
-  // Camera up
+  // Up vector
   let ux = 0, uy = 1, uz = 0;
 
-  // ---- rotate forward ----
+  // Rotate forward
   const f_ix =  qw * fx + qy * fz - qz * fy;
   const f_iy =  qw * fy + qz * fx - qx * fz;
   const f_iz =  qw * fz + qx * fy - qy * fx;
@@ -111,7 +162,7 @@ function getCameraRPY(qx, qy, qz, qw) {
   const fy_w = f_iy * qw + f_iw * -qy + f_iz * -qx - f_ix * -qz;
   const fz_w = f_iz * qw + f_iw * -qz + f_ix * -qy - f_iy * -qx;
 
-  // ---- rotate up ----
+  // Rotate up
   const u_ix =  qw * ux + qy * uz - qz * uy;
   const u_iy =  qw * uy + qz * ux - qx * uz;
   const u_iz =  qw * uz + qx * uy - qy * ux;
@@ -121,9 +172,12 @@ function getCameraRPY(qx, qy, qz, qw) {
   const uy_w = u_iy * qw + u_iw * -qy + u_iz * -qx - u_ix * -qz;
   const uz_w = u_iz * qw + u_iw * -qz + u_ix * -qy - u_iy * -qx;
 
-  // ---- compute RPY ----
+  // Compute RPY
   let yaw = Math.atan2(fx_w, fy_w);
-  let pitch = Math.asin(fz_w);
+
+  const fz_clamped = Math.max(-1, Math.min(1, fz_w));
+  let pitch = Math.asin(fz_clamped);
+
   let roll = Math.atan2(ux_w, uz_w);
 
   return {
