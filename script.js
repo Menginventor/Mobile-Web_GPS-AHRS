@@ -144,7 +144,7 @@ function startQuaternionSensor() {
 // ==========================
 // CAMERA RPY
 // ==========================
-function getCameraRPY(qx, qy, qz, qw) {
+function getCameraRPY_old(qx, qy, qz, qw) {
 
   // Forward vector
   let fx = 0, fy = 0, fz = 1;
@@ -184,5 +184,30 @@ function getCameraRPY(qx, qy, qz, qw) {
     roll: roll * 180 / Math.PI,
     pitch: pitch * 180 / Math.PI,
     yaw: (yaw * 180 / Math.PI + 360) % 360
+  };
+}
+function getCameraRPY(qx, qy, qz, qw) {
+
+  // YAW (independent of roll)
+  let yaw = Math.atan2(
+    2 * (qw * qz + qx * qy),
+    1 - 2 * (qy * qy + qz * qz)
+  );
+
+  // PITCH
+  let sinp = 2 * (qw * qy - qz * qx);
+  sinp = Math.max(-1, Math.min(1, sinp));
+  let pitch = Math.asin(sinp);
+
+  // ROLL
+  let roll = Math.atan2(
+    2 * (qw * qx + qy * qz),
+    1 - 2 * (qx * qx + qy * qy)
+  );
+
+  return {
+    yaw: (yaw * 180 / Math.PI + 360) % 360,
+    pitch: pitch * 180 / Math.PI,
+    roll: roll * 180 / Math.PI
   };
 }
