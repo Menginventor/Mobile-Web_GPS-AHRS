@@ -121,7 +121,7 @@ function startQuaternionSensor() {
       document.getElementById("qz").textContent = qz.toFixed(4);
       document.getElementById("qw").textContent = qw.toFixed(4);
 
-const f = getCameraVector(qx, qy, qz, qw);
+const f = getWorldVectorFromDevice(qx, qy, qz, qw);
 
     // show vector
     document.getElementById("fx").textContent = f.x.toFixed(3);
@@ -240,6 +240,29 @@ function getCameraRPY(qx, qy, qz, qw) {
     pitch: pitch * 180 / Math.PI,
     yaw: (yaw * 180 / Math.PI + 360) % 360
   };
+}
+function getCameraVector(qx, qy, qz, qw) {
+  // 1. Camera forward in DEVICE frame (usually -Z)
+  const vx = 0, vy = 0, vz = -1;
+
+  // 2. Extract the vector part of the quaternion
+  // Using the formula: v' = v + 2w(q_vec x v) + 2(q_vec x (q_vec x v))
+
+  // To rotate world -> device, use (qx, qy, qz, qw)
+  // To rotate device -> world, use inverse: (-qx, -qy, -qz, qw)
+  const ix = -qx, iy = -qy, iz = -qz, iw = qw;
+
+  // Calculate the cross product [q_vec x v]
+  const tx = 2 * (iy * vz - iz * vy);
+  const ty = 2 * (iz * vx - ix * vz);
+  const tz = 2 * (ix * vy - iy * vx);
+
+  // Apply the final rotation
+  const x = vx + iw * tx + (iy * tz - iz * ty);
+  const y = vy + iw * ty + (iz * tx - ix * tz);
+  const z = vz + iw * tz + (ix * ty - iy * tx);
+
+  return { x, y, z };
 }
 function getWorldVectorFromDevice(qx, qy, qz, qw) {
   // 1. Define the camera "Forward" in the DEVICE frame
