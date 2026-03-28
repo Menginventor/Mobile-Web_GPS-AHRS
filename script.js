@@ -242,23 +242,25 @@ function getCameraRPY(qx, qy, qz, qw) {
   };
 }
 function getCameraVector(qx, qy, qz, qw) {
+  // 1. Camera forward in DEVICE frame (usually -Z)
+  const vx = 0, vy = 0, vz = -1;
 
-  // 🎥 camera forward in DEVICE frame
-  const fx = 0, fy = 0, fz = -1;
+  // 2. Extract the vector part of the quaternion
+  // Using the formula: v' = v + 2w(q_vec x v) + 2(q_vec x (q_vec x v))
 
-  // 🔁 Apply q⁻¹ * v * q  (device → world)
+  // To rotate world -> device, use (qx, qy, qz, qw)
+  // To rotate device -> world, use inverse: (-qx, -qy, -qz, qw)
   const ix = -qx, iy = -qy, iz = -qz, iw = qw;
 
-  // first multiply (q⁻¹ * v)
-  const tx =  iw * fx + iy * fz - iz * fy;
-  const ty =  iw * fy + iz * fx - ix * fz;
-  const tz =  iw * fz + ix * fy - iy * fx;
-  const tw = -ix * fx - iy * fy - iz * fz;
+  // Calculate the cross product [q_vec x v]
+  const tx = 2 * (iy * vz - iz * vy);
+  const ty = 2 * (iz * vx - ix * vz);
+  const tz = 2 * (ix * vy - iy * vx);
 
-  // second multiply (* q)
-  const x = tx * qw + tw * -qx + ty * -qz - tz * -qy;
-  const y = ty * qw + tw * -qy + tz * -qx - tx * -qz;
-  const z = tz * qw + tw * -qz + tx * -qy - ty * -qx;
+  // Apply the final rotation
+  const x = vx + iw * tx + (iy * tz - iz * ty);
+  const y = vy + iw * ty + (iz * tx - ix * tz);
+  const z = vz + iw * tz + (ix * ty - iy * tx);
 
   return { x, y, z };
 }
