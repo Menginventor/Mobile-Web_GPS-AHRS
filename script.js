@@ -96,7 +96,7 @@ function startQuaternionSensor() {
 function getCameraRPY(qx, qy, qz, qw) {
 
   // Camera forward (back camera)
-  let fx = 0, fy = 0, fz = -1;
+  let fx = 0, fy = 0, fz = 1;
 
   // Camera up
   let ux = 0, uy = 1, uz = 0;
@@ -123,7 +123,7 @@ function getCameraRPY(qx, qy, qz, qw) {
 
   // ---- compute RPY ----
   let yaw = Math.atan2(fx_w, fy_w);
-  let pitch = Math.asin(fz_w);
+  let pitch = Math.asin(-fz_w);
   let roll = Math.atan2(ux_w, uy_w);
 
   return {
