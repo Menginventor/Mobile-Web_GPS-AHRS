@@ -243,61 +243,22 @@ function getCameraRPY(qx, qy, qz, qw) {
 }
 function getCameraVector(qx, qy, qz, qw) {
 
-  // 🔁 Convert world→device to device→world (transpose rotation matrix)
-  const xx = qx * qx;
-  const yy = qy * qy;
-  const zz = qz * qz;
-
-  const xy = qx * qy;
-  const xz = qx * qz;
-  const yz = qy * qz;
-
-  const wx = qw * qx;
-  const wy = qw * qy;
-  const wz = qw * qz;
-
-  // Rotation matrix (world → device)
-  const R = [
-    [1 - 2*(yy + zz),     2*(xy - wz),     2*(xz + wy)],
-    [    2*(xy + wz), 1 - 2*(xx + zz),     2*(yz - wx)],
-    [    2*(xz - wy),     2*(yz + wx), 1 - 2*(xx + yy)]
-  ];
-
-  // 🔁 Transpose → device → world
-  const Rt = [
-    [R[0][0], R[1][0], R[2][0]],
-    [R[0][1], R[1][1], R[2][1]],
-    [R[0][2], R[1][2], R[2][2]]
-  ];
-
-  // 🎥 camera forward in device frame
+  // 🎥 camera forward in DEVICE frame
   const fx = 0, fy = 0, fz = -1;
 
-  // apply rotation
-  const fx_w = Rt[0][0]*fx + Rt[0][1]*fy + Rt[0][2]*fz;
-  const fy_w = Rt[1][0]*fx + Rt[1][1]*fy + Rt[1][2]*fz;
-  const fz_w = Rt[2][0]*fx + Rt[2][1]*fy + Rt[2][2]*fz;
+  // 🔁 Apply q⁻¹ * v * q  (device → world)
+  const ix = -qx, iy = -qy, iz = -qz, iw = qw;
 
-  return { x: fx_w, y: fy_w, z: fz_w };
-}
-function rotateVectorByQuat(vx, vy, vz, qx, qy, qz, qw) {
-  // q must be device → world, so invert first
-  const x = -qx, y = -qy, z = -qz, w = qw;
+  // first multiply (q⁻¹ * v)
+  const tx =  iw * fx + iy * fz - iz * fy;
+  const ty =  iw * fy + iz * fx - ix * fz;
+  const tz =  iw * fz + ix * fy - iy * fx;
+  const tw = -ix * fx - iy * fy - iz * fz;
 
-  // cross(q.xyz, v)
-  const cx1 = y * vz - z * vy;
-  const cy1 = z * vx - x * vz;
-  const cz1 = x * vy - y * vx;
+  // second multiply (* q)
+  const x = tx * qw + tw * -qx + ty * -qz - tz * -qy;
+  const y = ty * qw + tw * -qy + tz * -qx - tx * -qz;
+  const z = tz * qw + tw * -qz + tx * -qy - ty * -qx;
 
-  // cross(q.xyz, cross + w*v)
-  const cx2 = y * (cz1 + w * vz) - z * (cy1 + w * vy);
-  const cy2 = z * (cx1 + w * vx) - x * (cz1 + w * vz);
-  const cz2 = x * (cy1 + w * vy) - y * (cx1 + w * vx);
-
-  // final
-  return {
-    x: vx + 2 * cx2,
-    y: vy + 2 * cy2,
-    z: vz + 2 * cz2
-  };
+  return { x, y, z };
 }
