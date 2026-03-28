@@ -188,41 +188,55 @@ function getCameraRPY_old(qx, qy, qz, qw) {
 }
 function getCameraRPY(qx, qy, qz, qw) {
 
-  // ✅ BACK CAMERA forward
+  // 🔁 Inverse quaternion (device → world)
+  const ix = -qx, iy = -qy, iz = -qz, iw = qw;
+
+  // ✅ BACK CAMERA forward (camera frame)
   let fx = 0, fy = 0, fz = -1;
 
-  // Up vector
+  // Up vector (camera up ≈ device +Y flipped already handled by forward choice)
   let ux = 0, uy = 1, uz = 0;
 
-  // ---- rotate forward ----
-  const f_ix =  qw * fx + qy * fz - qz * fy;
-  const f_iy =  qw * fy + qz * fx - qx * fz;
-  const f_iz =  qw * fz + qx * fy - qy * fx;
-  const f_iw = -qx * fx - qy * fy - qz * fz;
+  // ---- rotate forward (device → world) ----
+  const f_ix =  iw * fx + iy * fz - iz * fy;
+  const f_iy =  iw * fy + iz * fx - ix * fz;
+  const f_iz =  iw * fz + ix * fy - iy * fx;
+  const f_iw = -ix * fx - iy * fy - iz * fz;
 
-  const fx_w = f_ix * qw + f_iw * -qx + f_iy * -qz - f_iz * -qy;
-  const fy_w = f_iy * qw + f_iw * -qy + f_iz * -qx - f_ix * -qz;
-  const fz_w = f_iz * qw + f_iw * -qz + f_ix * -qy - f_iy * -qx;
+  const fx_w = f_ix * iw + f_iw * -ix + f_iy * -iz - f_iz * -iy;
+  const fy_w = f_iy * iw + f_iw * -iy + f_iz * -ix - f_ix * -iz;
+  const fz_w = f_iz * iw + f_iw * -iz + f_ix * -iy - f_iy * -ix;
 
   // ---- rotate up ----
-  const u_ix =  qw * ux + qy * uz - qz * uy;
-  const u_iy =  qw * uy + qz * ux - qx * uz;
-  const u_iz =  qw * uz + qx * uy - qy * ux;
-  const u_iw = -qx * ux - qy * uy - qz * uz;
+  const u_ix =  iw * ux + iy * uz - iz * uy;
+  const u_iy =  iw * uy + iz * ux - ix * uz;
+  const u_iz =  iw * uz + ix * uy - iy * ux;
+  const u_iw = -ix * ux - iy * uy - iz * uz;
 
-  const ux_w = u_ix * qw + u_iw * -qx + u_iy * -qz - u_iz * -qy;
-  const uy_w = u_iy * qw + u_iw * -qy + u_iz * -qx - u_ix * -qz;
-  const uz_w = u_iz * qw + u_iw * -qz + u_ix * -qy - u_iy * -qx;
+  const ux_w = u_ix * iw + u_iw * -ix + u_iy * -iz - u_iz * -iy;
+  const uy_w = u_iy * iw + u_iw * -iy + u_iz * -ix - u_ix * -iz;
+  const uz_w = u_iz * iw + u_iw * -iz + u_ix * -iy - u_iy * -ix;
 
-  // ✅ YAW from horizontal projection (correct for AR)
+  // -----------------------------
+  // 🎯 YAW (compass heading)
+  // -----------------------------
   let yaw = Math.atan2(fx_w, fy_w);
 
-  // pitch
+  // -----------------------------
+  // 📐 PITCH
+  // -----------------------------
   const fz_clamped = Math.max(-1, Math.min(1, fz_w));
   let pitch = Math.asin(fz_clamped);
 
-  // roll (stable enough)
-  let roll = Math.atan2(ux_w, uz_w);
+  // -----------------------------
+  // 🔄 ROLL (improved)
+  // -----------------------------
+  // Use horizontal right vector instead of unstable up-only method
+  const rx_w = uy_w * fz_w - uz_w * fy_w;
+  const ry_w = uz_w * fx_w - ux_w * fz_w;
+  const rz_w = ux_w * fy_w - uy_w * fx_w;
+
+  let roll = Math.atan2(rx_w, rz_w);
 
   return {
     roll: roll * 180 / Math.PI,
