@@ -186,28 +186,45 @@ function getCameraRPY_old(qx, qy, qz, qw) {
     yaw: (yaw * 180 / Math.PI + 360) % 360
   };
 }
-function getCameraRPY(qx, qy, qz, qw) {
+function getCameraRPY_old(qx, qy, qz, qw) {
 
-  // YAW (independent of roll)
-  let yaw = Math.atan2(
-    2 * (qw * qz + qx * qy),
-    1 - 2 * (qy * qy + qz * qz)
-  );
+  // Forward vector
+  let fx = 0, fy = 0, fz = 1;
 
-  // PITCH
-  let sinp = 2 * (qw * qy - qz * qx);
-  sinp = Math.max(-1, Math.min(1, sinp));
-  let pitch = Math.asin(sinp);
+  // Up vector
+  let ux = 0, uy = 1, uz = 0;
 
-  // ROLL
-  let roll = Math.atan2(
-    2 * (qw * qx + qy * qz),
-    1 - 2 * (qx * qx + qy * qy)
-  );
+  // Rotate forward
+  const f_ix =  qw * fx + qy * fz - qz * fy;
+  const f_iy =  qw * fy + qz * fx - qx * fz;
+  const f_iz =  qw * fz + qx * fy - qy * fx;
+  const f_iw = -qx * fx - qy * fy - qz * fz;
+
+  const fx_w = f_ix * qw + f_iw * -qx + f_iy * -qz - f_iz * -qy;
+  const fy_w = f_iy * qw + f_iw * -qy + f_iz * -qx - f_ix * -qz;
+  const fz_w = f_iz * qw + f_iw * -qz + f_ix * -qy - f_iy * -qx;
+
+  // Rotate up
+  const u_ix =  qw * ux + qy * uz - qz * uy;
+  const u_iy =  qw * uy + qz * ux - qx * uz;
+  const u_iz =  qw * uz + qx * uy - qy * ux;
+  const u_iw = -qx * ux - qy * uy - qz * uz;
+
+  const ux_w = u_ix * qw + u_iw * -qx + u_iy * -qz - u_iz * -qy;
+  const uy_w = u_iy * qw + u_iw * -qy + u_iz * -qx - u_ix * -qz;
+  const uz_w = u_iz * qw + u_iw * -qz + u_ix * -qy - u_iy * -qx;
+
+  // Compute RPY
+  let yaw = Math.atan2(fx_w, fy_w);
+
+  const fz_clamped = Math.max(-1, Math.min(1, fz_w));
+  let pitch = Math.asin(fz_clamped);
+
+  let roll = Math.atan2(ux_w, uz_w);
 
   return {
-    yaw: (yaw * 180 / Math.PI + 360) % 360,
+    roll: roll * 180 / Math.PI,
     pitch: pitch * 180 / Math.PI,
-    roll: roll * 180 / Math.PI
+    yaw: (yaw * 180 / Math.PI + 360) % 360
   };
 }
