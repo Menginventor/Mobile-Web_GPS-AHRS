@@ -116,31 +116,86 @@ function startQuaternionSensor() {
       const qz = q[2];
       const qw = q[3];
 
+      // -------------------------
+      // Show quaternion
+      // -------------------------
       document.getElementById("qx").textContent = qx.toFixed(4);
       document.getElementById("qy").textContent = qy.toFixed(4);
       document.getElementById("qz").textContent = qz.toFixed(4);
       document.getElementById("qw").textContent = qw.toFixed(4);
 
-const f = getWorldVectorFromDevice(qx, qy, qz, qw);
+      // -------------------------
+      // Forward vector (camera)
+      // -------------------------
+      const f = getWorldVectorFromDevice(qx, qy, qz, qw);
 
-    // show vector
-    document.getElementById("fx").textContent = f.x.toFixed(3);
-    document.getElementById("fy").textContent = f.y.toFixed(3);
-    document.getElementById("fz").textContent = f.z.toFixed(3);
+      // normalize (important!)
+      const fn = Math.hypot(f.x, f.y, f.z);
+      const fx = f.x / fn;
+      const fy = f.y / fn;
+      const fz = f.z / fn;
 
-    // heading from vector
-    let yaw = Math.atan2(f.x, f.y) * 180 / Math.PI;
-    yaw = (yaw + 360) % 360;
+      document.getElementById("fx").textContent = fx.toFixed(3);
+      document.getElementById("fy").textContent = fy.toFixed(3);
+      document.getElementById("fz").textContent = fz.toFixed(3);
 
-    // pitch directly from vector
-    let pitch = Math.asin(Math.max(-1, Math.min(1, f.z))) * 180 / Math.PI;
+      // -------------------------
+      // YAW (heading)
+      // -------------------------
+      let yaw = Math.atan2(fx, fy) * 180 / Math.PI;
+      yaw = (yaw + 360) % 360;
 
-    document.getElementById("yaw").textContent = yaw.toFixed(1);
-    document.getElementById("pitch").textContent = pitch.toFixed(1);
-    document.getElementById("roll").textContent = "-"; // skip for now
+      // -------------------------
+      // PITCH
+      // -------------------------
+      let pitch = Math.asin(Math.max(-1, Math.min(1, fz))) * 180 / Math.PI;
 
-    document.getElementById("heading").textContent = yaw.toFixed(1);
-    document.getElementById("headingBig").textContent = yaw.toFixed(0) + "°";
+      // -------------------------
+      // ROLL (vector-based)
+      // -------------------------
+      let roll = 0;
+
+      // world up
+      const wx = 0, wy = 0, wz = 1;
+
+      // right = f × world_up
+      let rx = fy * wz - fz * wy;
+      let ry = fz * wx - fx * wz;
+      let rz = fx * wy - fy * wx;
+
+      const rn = Math.hypot(rx, ry, rz);
+
+      if (rn > 1e-6) {
+        rx /= rn;
+        ry /= rn;
+        rz /= rn;
+
+        // up = right × forward
+        const ux = ry * fz - rz * fy;
+        const uy = rz * fx - rx * fz;
+        const uz = rx * fy - ry * fx;
+
+        // signed angle between world_up and camera_up
+        const dot = ux * wx + uy * wy + uz * wz;
+
+        const cx = uy * wz - uz * wy;
+        const cy = uz * wx - ux * wz;
+        const cz = ux * wy - uy * wx;
+
+        const sign = fx * cx + fy * cy + fz * cz;
+
+        roll = Math.atan2(sign, dot) * 180 / Math.PI;
+      }
+
+      // -------------------------
+      // UI update
+      // -------------------------
+      document.getElementById("yaw").textContent = yaw.toFixed(1);
+      document.getElementById("pitch").textContent = pitch.toFixed(1);
+      document.getElementById("roll").textContent = roll.toFixed(1);
+
+      document.getElementById("heading").textContent = yaw.toFixed(1);
+      document.getElementById("headingBig").textContent = yaw.toFixed(0) + "°";
     });
 
     sensor.start();
@@ -150,7 +205,6 @@ const f = getWorldVectorFromDevice(qx, qy, qz, qw);
     alert("Orientation sensor not supported");
   }
 }
-
 
 // ==========================
 // CAMERA RPY
