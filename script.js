@@ -188,10 +188,13 @@ function getCameraRPY_old(qx, qy, qz, qw) {
 }
 function getCameraRPY(qx, qy, qz, qw) {
 
-  let fx = 0, fy = 0, fz = 1;
+  // ✅ BACK CAMERA forward
+  let fx = 0, fy = 0, fz = -1;
+
+  // Up vector
   let ux = 0, uy = 1, uz = 0;
 
-  // rotate forward
+  // ---- rotate forward ----
   const f_ix =  qw * fx + qy * fz - qz * fy;
   const f_iy =  qw * fy + qz * fx - qx * fz;
   const f_iz =  qw * fz + qx * fy - qy * fx;
@@ -201,7 +204,7 @@ function getCameraRPY(qx, qy, qz, qw) {
   const fy_w = f_iy * qw + f_iw * -qy + f_iz * -qx - f_ix * -qz;
   const fz_w = f_iz * qw + f_iw * -qz + f_ix * -qy - f_iy * -qx;
 
-  // rotate up
+  // ---- rotate up ----
   const u_ix =  qw * ux + qy * uz - qz * uy;
   const u_iy =  qw * uy + qz * ux - qx * uz;
   const u_iz =  qw * uz + qx * uy - qy * ux;
@@ -211,15 +214,14 @@ function getCameraRPY(qx, qy, qz, qw) {
   const uy_w = u_iy * qw + u_iw * -qy + u_iz * -qx - u_ix * -qz;
   const uz_w = u_iz * qw + u_iw * -qz + u_ix * -qy - u_iy * -qx;
 
-  // ✅ FIXED YAW (roll-independent)
-  const norm = Math.sqrt(fx_w * fx_w + fy_w * fy_w);
-  let yaw = norm > 1e-6 ? Math.atan2(fx_w / norm, fy_w / norm) : 0;
+  // ✅ YAW from horizontal projection (correct for AR)
+  let yaw = Math.atan2(fx_w, fy_w);
 
   // pitch
   const fz_clamped = Math.max(-1, Math.min(1, fz_w));
   let pitch = Math.asin(fz_clamped);
 
-  // roll
+  // roll (stable enough)
   let roll = Math.atan2(ux_w, uz_w);
 
   return {
