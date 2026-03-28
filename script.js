@@ -243,21 +243,29 @@ function getCameraRPY(qx, qy, qz, qw) {
 }
 function getCameraVector(qx, qy, qz, qw) {
 
-  // 🔁 Inverse quaternion (device → world)
-  const ix = -qx, iy = -qy, iz = -qz, iw = qw;
+  // camera forward (device frame)
+  const f = rotateVectorByQuat(0, 0, -1, qx, qy, qz, qw);
 
-  // 🎥 Camera forward in device frame (back camera)
-  const fx = 0, fy = 0, fz = -1;
+  return f;
+}
+function rotateVectorByQuat(vx, vy, vz, qx, qy, qz, qw) {
+  // q must be device → world, so invert first
+  const x = -qx, y = -qy, z = -qz, w = qw;
 
-  // ---- rotate forward (device → world) ----
-  const tx =  iw * fx + iy * fz - iz * fy;
-  const ty =  iw * fy + iz * fx - ix * fz;
-  const tz =  iw * fz + ix * fy - iy * fx;
-  const tw = -ix * fx - iy * fy - iz * fz;
+  // cross(q.xyz, v)
+  const cx1 = y * vz - z * vy;
+  const cy1 = z * vx - x * vz;
+  const cz1 = x * vy - y * vx;
 
-  const fx_w = tx * iw + tw * -ix + ty * -iz - tz * -iy;
-  const fy_w = ty * iw + tw * -iy + tz * -ix - tx * -iz;
-  const fz_w = tz * iw + tw * -iz + tx * -iy - ty * -ix;
+  // cross(q.xyz, cross + w*v)
+  const cx2 = y * (cz1 + w * vz) - z * (cy1 + w * vy);
+  const cy2 = z * (cx1 + w * vx) - x * (cz1 + w * vz);
+  const cz2 = x * (cy1 + w * vy) - y * (cx1 + w * vx);
 
-  return { x: fx_w, y: fy_w, z: fz_w };
+  // final
+  return {
+    x: vx + 2 * cx2,
+    y: vy + 2 * cy2,
+    z: vz + 2 * cz2
+  };
 }
