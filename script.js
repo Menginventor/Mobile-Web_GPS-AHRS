@@ -125,16 +125,23 @@ function startQuaternionSensor() {
       document.getElementById("qw").textContent = qw.toFixed(4);
 
       // -------------------------
-      // Forward vector (camera)
+      // Get camera forward & up
       // -------------------------
-      const f = getWorldVectorFromDevice(qx, qy, qz, qw);
+      const f = rotateVec(qx, qy, qz, qw, 0, 0, -1); // forward
+      const u = rotateVec(qx, qy, qz, qw, 0, 1, 0);  // up
 
-      // normalize (important!)
+      // normalize
       const fn = Math.hypot(f.x, f.y, f.z);
       const fx = f.x / fn;
       const fy = f.y / fn;
       const fz = f.z / fn;
 
+      const un = Math.hypot(u.x, u.y, u.z);
+      const ux = u.x / un;
+      const uy = u.y / un;
+      const uz = u.z / un;
+
+      // show forward vector
       document.getElementById("fx").textContent = fx.toFixed(3);
       document.getElementById("fy").textContent = fy.toFixed(3);
       document.getElementById("fz").textContent = fz.toFixed(3);
@@ -151,38 +158,43 @@ function startQuaternionSensor() {
       let pitch = Math.asin(Math.max(-1, Math.min(1, fz))) * 180 / Math.PI;
 
       // -------------------------
-      // ROLL (vector-based)
+      // ROLL (correct)
       // -------------------------
       let roll = 0;
 
       // world up
       const wx = 0, wy = 0, wz = 1;
 
-      // right = f × world_up
-      let rx = fy * wz - fz * wy;
-      let ry = fz * wx - fx * wz;
-      let rz = fx * wy - fy * wx;
+      // project up vectors onto plane ⟂ forward
+      const dot_fu = fx*ux + fy*uy + fz*uz;
+      const u_px = ux - dot_fu * fx;
+      const u_py = uy - dot_fu * fy;
+      const u_pz = uz - dot_fu * fz;
 
-      const rn = Math.hypot(rx, ry, rz);
+      const dot_fw = fx*wx + fy*wy + fz*wz;
+      const w_px = wx - dot_fw * fx;
+      const w_py = wy - dot_fw * fy;
+      const w_pz = wz - dot_fw * fz;
 
-      if (rn > 1e-6) {
-        rx /= rn;
-        ry /= rn;
-        rz /= rn;
+      const un2 = Math.hypot(u_px, u_py, u_pz);
+      const wn2 = Math.hypot(w_px, w_py, w_pz);
 
-        // up = right × forward
-        const ux = ry * fz - rz * fy;
-        const uy = rz * fx - rx * fz;
-        const uz = rx * fy - ry * fx;
+      if (un2 > 1e-6 && wn2 > 1e-6) {
+        const ux2 = u_px / un2;
+        const uy2 = u_py / un2;
+        const uz2 = u_pz / un2;
 
-        // signed angle between world_up and camera_up
-        const dot = ux * wx + uy * wy + uz * wz;
+        const wx2 = w_px / wn2;
+        const wy2 = w_py / wn2;
+        const wz2 = w_pz / wn2;
 
-        const cx = uy * wz - uz * wy;
-        const cy = uz * wx - ux * wz;
-        const cz = ux * wy - uy * wx;
+        const dot = ux2*wx2 + uy2*wy2 + uz2*wz2;
 
-        const sign = fx * cx + fy * cy + fz * cz;
+        const cx = uy2*wz2 - uz2*wy2;
+        const cy = uz2*wx2 - ux2*wz2;
+        const cz = ux2*wy2 - uy2*wx2;
+
+        const sign = fx*cx + fy*cy + fz*cz;
 
         roll = Math.atan2(sign, dot) * 180 / Math.PI;
       }
@@ -206,6 +218,24 @@ function startQuaternionSensor() {
   }
 }
 
+
+// ==========================
+// Quaternion vector rotation
+// ==========================
+function rotateVec(qx, qy, qz, qw, vx, vy, vz) {
+
+  // NOTE: using q as-is (works with your current "device" frame behavior)
+
+  const tx = 2 * (qy * vz - qz * vy);
+  const ty = 2 * (qz * vx - qx * vz);
+  const tz = 2 * (qx * vy - qy * vx);
+
+  return {
+    x: vx + qw * tx + (qy * tz - qz * ty),
+    y: vy + qw * ty + (qz * tx - qx * tz),
+    z: vz + qw * tz + (qx * ty - qy * tx)
+  };
+}
 // ==========================
 // CAMERA RPY
 // ==========================
