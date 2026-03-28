@@ -241,26 +241,23 @@ function getCameraRPY(qx, qy, qz, qw) {
     yaw: (yaw * 180 / Math.PI + 360) % 360
   };
 }
-function getCameraVector(qx, qy, qz, qw) {
-  // 1. Camera forward in DEVICE frame (usually -Z)
+function getWorldVectorFromDevice(qx, qy, qz, qw) {
+  // 1. Define the camera "Forward" in the DEVICE frame
+  // Usually, the back camera points toward -Z (out the back of the screen)
   const vx = 0, vy = 0, vz = -1;
 
-  // 2. Extract the vector part of the quaternion
-  // Using the formula: v' = v + 2w(q_vec x v) + 2(q_vec x (q_vec x v))
+  // 2. To go Device -> World, use the quaternion AS IS (no negation)
+  const xq = qx, yq = qy, zq = qz, wq = qw;
 
-  // To rotate world -> device, use (qx, qy, qz, qw)
-  // To rotate device -> world, use inverse: (-qx, -qy, -qz, qw)
-  const ix = -qx, iy = -qy, iz = -qz, iw = qw;
+  // 3. Calculate (q_vec x v) - the cross product of quaternion vector part and device vector
+  const tx = 2 * (yq * vz - zq * vy);
+  const ty = 2 * (zq * vx - xq * vz);
+  const tz = 2 * (xq * vy - yq * vx);
 
-  // Calculate the cross product [q_vec x v]
-  const tx = 2 * (iy * vz - iz * vy);
-  const ty = 2 * (iz * vx - ix * vz);
-  const tz = 2 * (ix * vy - iy * vx);
+  // 4. Calculate v_world = v + w*t + (q_vec x t)
+  const resX = vx + wq * tx + (yq * tz - zq * ty);
+  const resY = vy + wq * ty + (zq * tx - xq * tz);
+  const resZ = vz + wq * tz + (xq * ty - yq * tx);
 
-  // Apply the final rotation
-  const x = vx + iw * tx + (iy * tz - iz * ty);
-  const y = vy + iw * ty + (iz * tx - ix * tz);
-  const z = vz + iw * tz + (ix * ty - iy * tx);
-
-  return { x, y, z };
+  return { x: resX, y: resY, z: resZ };
 }
