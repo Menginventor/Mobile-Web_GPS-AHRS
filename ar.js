@@ -235,7 +235,8 @@ function updateAR() {
 
     // base offsets
     const x0 = (diff / fovX) * screenWidth;
-    const y0 = 0; // ignore pitch as you requested
+    // IMPORTANT: pitch sign (camera looks down = positive pitch → marker goes down)
+    const y0 = (-currentPitch / fovY) * screenHeight;
 
     // convert roll to radians
     const r = currentRoll * Math.PI / 180;
