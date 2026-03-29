@@ -162,7 +162,7 @@ function updateAR() {
 
     // map angle → screen
     const screenWidth = window.innerWidth;
-    const fov = 60;
+    const fov = 35;
 
     const x = (diff / fov) * screenWidth;
 
