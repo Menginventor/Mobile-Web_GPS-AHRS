@@ -1,3 +1,6 @@
+let stream = null;
+let cameraOn = false;
+
 const startBtn = document.getElementById("startBtn");
 
 // ==========================
@@ -78,7 +81,21 @@ function readURL() {
 // START BUTTON
 // ==========================
 startBtn.addEventListener("click", async () => {
-  await startCamera();
+
+  if (!cameraOn) {
+    // turn ON camera
+    await startCamera();
+    cameraOn = true;
+    startBtn.textContent = "Stop Camera";
+
+  } else {
+    // turn OFF camera
+    stopCamera();
+    cameraOn = false;
+    startBtn.textContent = "Start Camera";
+  }
+
+  // ⚠️ keep these running ALWAYS (no change)
   startGPS();
   startQuaternion();
   requestAnimationFrame(updateAR);
@@ -87,13 +104,20 @@ startBtn.addEventListener("click", async () => {
 // ==========================
 // CAMERA
 // ==========================
+
 async function startCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({
+  stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: "environment" }
   });
   document.getElementById("camera").srcObject = stream;
 }
-
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+    document.getElementById("camera").srcObject = null;
+  }
+}
 // ==========================
 // GPS
 // ==========================
