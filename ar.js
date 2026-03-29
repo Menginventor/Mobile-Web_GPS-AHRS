@@ -406,12 +406,11 @@ function updateAR() {
     // ==========================
     // DELTA PITCH DISPLAY
     // ==========================
+    const deltaPitchDisplay = pitchTarget * 180 / Math.PI;
+    //const deltaPitchDeg = pitchRelative * 180 / Math.PI;
+    const signPitch = deltaPitchDisplay >= 0 ? "+" : "";
 
-    const deltaPitchDeg = pitchRelative * 180 / Math.PI;
-    const signPitch = deltaPitchDeg >= 0 ? "+" : "";
-
-    document.getElementById("deltaPitch").textContent =
-      signPitch + deltaPitchDeg.toFixed(1) + "°";
+    document.getElementById("deltaPitch").textContent = signPitch + deltaPitchDisplay.toFixed(1) + "°";
 
     const y0 = (pitchRelative / (fovY * Math.PI / 180)) * h; // new ver, wrong behave
 
