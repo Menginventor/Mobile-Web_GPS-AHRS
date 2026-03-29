@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR GPS Marker</title>
+  <link rel="stylesheet" href="ar.css">
+</head>
+<body>
+
+  <!-- Camera -->
+  <video id="camera" autoplay playsinline></video>
+
+  <!-- UI -->
+  <div class="ui">
+    <button id="startBtn">Start AR</button>
+
+    <div class="info">
+      <p>Lat: <span id="lat">-</span></p>
+      <p>Lon: <span id="lon">-</span></p>
+      <p>Yaw: <span id="yaw">-</span></p>
+      <p>Target Bearing: <span id="bearing">-</span></p>
+      <p>Relative: <span id="relative">-</span></p>
+    </div>
+  </div>
+
+  <!-- AR Marker -->
+  <div id="marker">📍</div>
+
+  <script src="ar.js"></script>
+</body>
+</html>
