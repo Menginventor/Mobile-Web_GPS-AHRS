@@ -233,7 +233,7 @@ function updateAR() {
     const w = window.innerWidth;
     const h = window.innerHeight;
 
-    const fovX = 75;
+    const fovX = 70;
     const fovY = 60 * (h / w);
 
     const x0 = (diff / fovX) * w;
