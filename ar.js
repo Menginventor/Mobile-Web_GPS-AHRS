@@ -209,6 +209,24 @@ function startQuaternion() {
       document.getElementById("yaw").textContent = yaw.toFixed(1);
       document.getElementById("pitch").textContent = pitch.toFixed(1);
       document.getElementById("roll").textContent = roll.toFixed(1);
+      //
+      const horizon = document.getElementById("horizon");
+
+    // convert roll to radians
+    const r = currentRoll * Math.PI / 180;
+
+    // optional: include pitch shift
+    const h = window.innerHeight;
+    const fovY = fovX * (h / window.innerWidth);
+
+    // move horizon with pitch
+    const yOffset = (currentPitch / fovY) * h;
+
+    // apply transform
+    horizon.style.transform = `
+      translate(-50%, calc(-50% + ${yOffset}px))
+      rotate(${currentRoll}deg)
+    `;
     });
 
     sensor.start();

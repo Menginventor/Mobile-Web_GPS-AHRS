@@ -116,10 +116,19 @@ button {
   font-size: 36px;
 }
 
-#markerLabel {
-  font-size: 14px;
-  margin-top: -6px;
-  padding: 2px 6px;
-  background: rgba(0,0,0,0.6);
-  border-radius: 6px;
+
+
+#horizon {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 200vw;              /* long line */
+  height: 2px;
+  background: yellow;
+
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+
+  z-index: 4;
+  pointer-events: none;
 }
