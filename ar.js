@@ -233,8 +233,16 @@ function updateAR() {
     const fovX = 35;
     const fovY = 70;
 
-    const x = (diff / fovX) * screenWidth;
-    const y = (-currentPitch / fovY) * screenHeight;
+    // base offsets
+    const x0 = (diff / fovX) * screenWidth;
+    const y0 = 0; // ignore pitch as you requested
+
+    // convert roll to radians
+    const r = currentRoll * Math.PI / 180;
+
+    // rotate screen axes
+    const x = x0 * Math.cos(r) - y0 * Math.sin(r);
+    const y = x0 * Math.sin(r) + y0 * Math.cos(r);
 
     const marker = document.getElementById("marker");
 
