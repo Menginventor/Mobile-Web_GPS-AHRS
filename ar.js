@@ -15,6 +15,49 @@ let targetLon = null;
 
 let sensor = null;
 
+// ✅ FOV (user-controlled)
+let fovX = 60;
+
+// ==========================
+// FOV STORAGE
+// ==========================
+function loadFOV() {
+  const saved = localStorage.getItem("fovX");
+  if (saved) {
+    fovX = parseFloat(saved);
+  }
+}
+
+function saveFOV() {
+  localStorage.setItem("fovX", fovX);
+}
+
+// ==========================
+// FOV UI
+// ==========================
+const panel = document.getElementById("settingsPanel");
+const openBtn = document.getElementById("openFovBtn");
+const closeBtn = document.getElementById("closeFovBtn");
+const saveBtn = document.getElementById("saveFovBtn");
+const fovXInput = document.getElementById("fovXInput");
+
+if (openBtn) {
+  openBtn.onclick = () => {
+    panel.classList.remove("hidden");
+    fovXInput.value = fovX;
+  };
+
+  closeBtn.onclick = () => {
+    panel.classList.add("hidden");
+  };
+
+  saveBtn.onclick = () => {
+    fovX = parseFloat(fovXInput.value);
+    saveFOV();
+    panel.classList.add("hidden");
+  };
+}
+
 // ==========================
 // READ TARGET FROM URL
 // ==========================
@@ -221,7 +264,6 @@ function updateAR() {
     document.getElementById("bearing").textContent = bearing.toFixed(1);
     document.getElementById("relative").textContent = diff.toFixed(1);
 
-    // distance UI
     const distText = distance < 1000
       ? distance.toFixed(1) + " m"
       : (distance/1000).toFixed(2) + " km";
@@ -229,12 +271,10 @@ function updateAR() {
     document.getElementById("distance").textContent = distText;
     document.getElementById("markerLabel").textContent = distText;
 
-    // projection
     const w = window.innerWidth;
     const h = window.innerHeight;
 
-    const fovX = 70;
-    const fovY = 60 * (h / w);
+    const fovY = fovX * (h / w);
 
     const x0 = (diff / fovX) * w;
     const y0 = (currentPitch / fovY) * h;
@@ -267,4 +307,5 @@ function updateAR() {
 // ==========================
 // INIT
 // ==========================
+loadFOV();
 readURL();

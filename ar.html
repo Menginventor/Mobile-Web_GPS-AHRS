@@ -41,6 +41,24 @@
     </div>
   </div>
 
-  <script src="ar.js?v=12"></script>
+  <!-- ⚙️ FOV SETTINGS POPUP -->
+  <div id="settingsPanel" class="hidden">
+    <h3>⚙️ FOV Settings</h3>
+
+    <label>
+      FOV X:
+      <input id="fovXInput" type="number" step="1" min="30" max="120">
+    </label>
+
+    <br><br>
+
+    <button id="saveFovBtn">Save</button>
+    <button id="closeFovBtn">Close</button>
+  </div>
+
+  <!-- ⚙️ Open button -->
+  <button id="openFovBtn">⚙️</button>
+
+  <script src="ar.js?v=14"></script>
 </body>
 </html>
