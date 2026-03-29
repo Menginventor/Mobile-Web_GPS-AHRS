@@ -5,7 +5,6 @@ const startBtn = document.getElementById("startBtn");
 // ==========================
 let currentLat = null;
 let currentLon = null;
-let currentAlt = null;
 
 let currentYaw = 0;
 let currentPitch = 0;
@@ -13,17 +12,10 @@ let currentRoll = 0;
 
 let targetLat = null;
 let targetLon = null;
-let targetAlt = null;
 
 let sensor = null;
 
-// ✅ NEW: runtime control
-let isRunning = false;
-let stream = null;
-let gpsWatchId = null;
-let animationId = null;
-
-// ✅ FOV
+// ✅ FOV (user-controlled)
 let fovX = 60;
 
 // ==========================
@@ -31,7 +23,9 @@ let fovX = 60;
 // ==========================
 function loadFOV() {
   const saved = localStorage.getItem("fovX");
-  if (saved) fovX = parseFloat(saved);
+  if (saved) {
+    fovX = parseFloat(saved);
+  }
 }
 
 function saveFOV() {
@@ -53,7 +47,9 @@ if (openBtn) {
     fovXInput.value = fovX;
   };
 
-  closeBtn.onclick = () => panel.classList.add("hidden");
+  closeBtn.onclick = () => {
+    panel.classList.add("hidden");
+  };
 
   saveBtn.onclick = () => {
     fovX = parseFloat(fovXInput.value);
@@ -63,7 +59,7 @@ if (openBtn) {
 }
 
 // ==========================
-// READ URL
+// READ TARGET FROM URL
 // ==========================
 function readURL() {
   const params = new URLSearchParams(window.location.search);
@@ -71,44 +67,28 @@ function readURL() {
   targetLat = parseFloat(params.get("lat"));
   targetLon = parseFloat(params.get("lon"));
 
-  const altParam = params.get("alt");
-  targetAlt = (altParam !== null) ? parseFloat(altParam) : null;
-
   if (!isNaN(targetLat) && !isNaN(targetLon)) {
-    console.log("Target:", targetLat, targetLon, "Alt:", targetAlt);
+    console.log("Target:", targetLat, targetLon);
   } else {
     alert("No lat/lon in URL");
   }
 }
 
 // ==========================
-// START / STOP BUTTON
+// START BUTTON
 // ==========================
 startBtn.addEventListener("click", async () => {
-
-  if (!isRunning) {
-    await startCamera();
-    startGPS();
-    startQuaternion();
-
-    animationId = requestAnimationFrame(updateAR);
-
-    startBtn.textContent = "Stop AR";
-    isRunning = true;
-
-  } else {
-    stopAR();
-
-    startBtn.textContent = "Start AR";
-    isRunning = false;
-  }
+  await startCamera();
+  startGPS();
+  startQuaternion();
+  requestAnimationFrame(updateAR);
 });
 
 // ==========================
 // CAMERA
 // ==========================
 async function startCamera() {
-  stream = await navigator.mediaDevices.getUserMedia({
+  const stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: "environment" }
   });
   document.getElementById("camera").srcObject = stream;
@@ -118,32 +98,37 @@ async function startCamera() {
 // GPS
 // ==========================
 function startGPS() {
-  gpsWatchId = navigator.geolocation.watchPosition((pos) => {
+  navigator.geolocation.watchPosition((pos) => {
 
     currentLat = pos.coords.latitude;
     currentLon = pos.coords.longitude;
 
     const altitude = pos.coords.altitude;
-
-    if (altitude !== null) {
-      currentAlt = altitude;
-      document.getElementById("altitude").textContent =
-        altitude.toFixed(1) + " m";
-    } else {
-      currentAlt = null;
-      document.getElementById("altitude").textContent = "N/A";
-    }
+    const accuracy = pos.coords.altitudeAccuracy;
 
     document.getElementById("lat").textContent = currentLat.toFixed(6);
     document.getElementById("lon").textContent = currentLon.toFixed(6);
 
-  }, console.warn, {
+    // altitude display
+    if (altitude !== null) {
+      document.getElementById("altitude").textContent =
+        altitude.toFixed(1) + " m";
+    } else {
+      document.getElementById("altitude").textContent = "N/A";
+    }
+
+    // (optional debug)
+    console.log("Altitude:", altitude, "Accuracy:", accuracy);
+
+  }, (err) => {
+    console.warn("GPS error:", err);
+  }, {
     enableHighAccuracy: true
   });
 }
 
 // ==========================
-// SENSOR
+// QUATERNION SENSOR
 // ==========================
 function startQuaternion() {
   if (sensor) return;
@@ -157,21 +142,31 @@ function startQuaternion() {
     sensor.addEventListener("reading", () => {
 
       const q = sensor.quaternion;
-      const [qx, qy, qz, qw] = q;
+      const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
 
       const f = rotateVec(qx, qy, qz, qw, 0, 0, -1);
       const u = rotateVec(qx, qy, qz, qw, 0, 1, 0);
 
       const fn = Math.hypot(f.x, f.y, f.z);
-      const fx = f.x / fn, fy = f.y / fn, fz = f.z / fn;
+      const fx = f.x / fn;
+      const fy = f.y / fn;
+      const fz = f.z / fn;
 
       const un = Math.hypot(u.x, u.y, u.z);
-      const ux = u.x / un, uy = u.y / un, uz = u.z / un;
+      const ux = u.x / un;
+      const uy = u.y / un;
+      const uz = u.z / un;
 
-      let yaw = (Math.atan2(fx, fy) * 180 / Math.PI + 360) % 360;
+      // YAW
+      let yaw = Math.atan2(fx, fy) * 180 / Math.PI;
+      yaw = (yaw + 360) % 360;
+
+      // PITCH
       let pitch = Math.asin(Math.max(-1, Math.min(1, fz))) * 180 / Math.PI;
 
+      // ROLL
       let roll = 0;
+
       const wx = 0, wy = 0, wz = 1;
 
       const dot_fu = fx*ux + fy*uy + fz*uz;
@@ -188,8 +183,13 @@ function startQuaternion() {
       const wn2 = Math.hypot(w_px, w_py, w_pz);
 
       if (un2 > 1e-6 && wn2 > 1e-6) {
-        const ux2 = u_px / un2, uy2 = u_py / un2, uz2 = u_pz / un2;
-        const wx2 = w_px / wn2, wy2 = w_py / wn2, wz2 = w_pz / wn2;
+        const ux2 = u_px / un2;
+        const uy2 = u_py / un2;
+        const uz2 = u_pz / un2;
+
+        const wx2 = w_px / wn2;
+        const wy2 = w_py / wn2;
+        const wz2 = w_pz / wn2;
 
         const dot = ux2*wx2 + uy2*wy2 + uz2*wz2;
 
@@ -198,6 +198,7 @@ function startQuaternion() {
         const cz = ux2*wy2 - uy2*wx2;
 
         const sign = fx*cx + fy*cy + fz*cz;
+
         roll = Math.atan2(sign, dot) * 180 / Math.PI;
       }
 
@@ -208,19 +209,24 @@ function startQuaternion() {
       document.getElementById("yaw").textContent = yaw.toFixed(1);
       document.getElementById("pitch").textContent = pitch.toFixed(1);
       document.getElementById("roll").textContent = roll.toFixed(1);
-
-      // horizon
+      //
       const horizon = document.getElementById("horizon");
-      if (horizon) {
-        const h = window.innerHeight;
-        const fovY = fovX * (h / window.innerWidth);
-        const yOffset = (currentPitch / fovY) * h;
 
-        horizon.style.transform = `
-          translate(-50%, calc(-50% + ${yOffset}px))
-          rotate(${currentRoll}deg)
-        `;
-      }
+    // convert roll to radians
+    const r = currentRoll * Math.PI / 180;
+
+    // optional: include pitch shift
+    const h = window.innerHeight;
+    const fovY = fovX * (h / window.innerWidth);
+
+    // move horizon with pitch
+    const yOffset = (currentPitch / fovY) * h;
+
+    // apply transform
+    horizon.style.transform = `
+      translate(-50%, calc(-50% + ${yOffset}px))
+      rotate(${currentRoll}deg)
+    `;
     });
 
     sensor.start();
@@ -231,34 +237,7 @@ function startQuaternion() {
 }
 
 // ==========================
-// STOP EVERYTHING
-// ==========================
-function stopAR() {
-
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-    document.getElementById("camera").srcObject = null;
-  }
-
-  if (sensor) {
-    sensor.stop();
-    sensor = null;
-  }
-
-  if (gpsWatchId !== null) {
-    navigator.geolocation.clearWatch(gpsWatchId);
-    gpsWatchId = null;
-  }
-
-  if (animationId !== null) {
-    cancelAnimationFrame(animationId);
-    animationId = null;
-  }
-}
-
-// ==========================
-// UTILS
+// ROTATE VECTOR
 // ==========================
 function rotateVec(qx, qy, qz, qw, vx, vy, vz) {
   const tx = 2 * (qy * vz - qz * vy);
@@ -272,6 +251,9 @@ function rotateVec(qx, qy, qz, qw, vx, vy, vz) {
   };
 }
 
+// ==========================
+// BEARING
+// ==========================
 function getBearing(lat1, lon1, lat2, lon2) {
   const toRad = d => d * Math.PI / 180;
   const toDeg = r => r * 180 / Math.PI;
@@ -287,6 +269,9 @@ function getBearing(lat1, lon1, lat2, lon2) {
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
+// ==========================
+// DISTANCE
+// ==========================
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const toRad = d => d * Math.PI / 180;
@@ -311,35 +296,50 @@ function updateAR() {
     const bearing = getBearing(currentLat, currentLon, targetLat, targetLon);
     const distance = getDistance(currentLat, currentLon, targetLat, targetLon);
 
-    let diff = ((bearing - currentYaw + 540) % 360) - 180;
+    let diff = bearing - currentYaw;
+    diff = ((diff + 540) % 360) - 180;
+
+    document.getElementById("bearing").textContent = bearing.toFixed(1);
+    document.getElementById("relative").textContent = diff.toFixed(1);
+
+    const distText = distance < 1000
+      ? distance.toFixed(1) + " m"
+      : (distance/1000).toFixed(2) + " km";
+
+    document.getElementById("distance").textContent = distText;
+    document.getElementById("markerLabel").textContent = distText;
 
     const w = window.innerWidth;
     const h = window.innerHeight;
+
     const fovY = fovX * (h / w);
 
-    let deltaAlt = 0;
-    if (targetAlt !== null && currentAlt !== null) {
-      deltaAlt = targetAlt - currentAlt;
-    }
-
-    const pitchTarget = Math.atan2(deltaAlt, Math.max(distance,1)) * 180 / Math.PI;
-    const verticalDiff = pitchTarget - currentPitch;
-
     const x0 = (diff / fovX) * w;
-    const y0 = (verticalDiff / fovY) * h;
+    const y0 = (currentPitch / fovY) * h;
 
     const r = currentRoll * Math.PI / 180;
 
     const x = x0 * Math.cos(r) - y0 * Math.sin(r);
     const y = x0 * Math.sin(r) + y0 * Math.cos(r);
 
-    document.getElementById("marker").style.transform = `
-      translate(calc(-50% + ${x}px), calc(-50% + ${y}px))
-      rotate(${currentRoll}deg)
-    `;
+    const marker = document.getElementById("marker");
+
+    if (Math.abs(diff) > 90) {
+      marker.style.display = "none";
+    } else {
+      marker.style.display = "block";
+
+      const scale = Math.max(0.6, Math.min(2.5, 200 / distance));
+
+      marker.style.transform = `
+        translate(calc(-50% + ${x}px), calc(-50% + ${y}px))
+        rotate(${currentRoll}deg)
+        scale(${scale})
+      `;
+    }
   }
 
-  animationId = requestAnimationFrame(updateAR);
+  requestAnimationFrame(updateAR);
 }
 
 // ==========================
