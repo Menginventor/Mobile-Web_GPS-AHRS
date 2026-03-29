@@ -231,7 +231,7 @@ function updateAR() {
     const screenHeight = window.innerHeight;
 
     const fovX = 35;
-    const fovY = 45;
+    const fovY = 70;
 
     const x = (diff / fovX) * screenWidth;
     const y = (-currentPitch / fovY) * screenHeight;
