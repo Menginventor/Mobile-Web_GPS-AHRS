@@ -391,15 +391,7 @@ function updateAR() {
     } else {
       document.getElementById("deltaAlt").textContent = "N/A";
     }
-// ==========================
-// DELTA PITCH DISPLAY
-// ==========================
 
-    const deltaPitchDeg = pitchRelative * 180 / Math.PI;
-    const signPitch = deltaPitchDeg >= 0 ? "+" : "";
-
-    document.getElementById("deltaPitch").textContent =
-      signPitch + deltaPitchDeg.toFixed(1) + "°";
 
 
     const w = window.innerWidth;
@@ -411,6 +403,15 @@ function updateAR() {
 
     //const pitchRelative = pitchTarget - (currentPitch * Math.PI / 180);
     const pitchRelative = pitchTarget + (currentPitch * Math.PI / 180);
+    // ==========================
+    // DELTA PITCH DISPLAY
+    // ==========================
+
+    const deltaPitchDeg = pitchRelative * 180 / Math.PI;
+    const signPitch = deltaPitchDeg >= 0 ? "+" : "";
+
+    document.getElementById("deltaPitch").textContent =
+      signPitch + deltaPitchDeg.toFixed(1) + "°";
 
     const y0 = (pitchRelative / (fovY * Math.PI / 180)) * h; // new ver, wrong behave
 
