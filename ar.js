@@ -1,8 +1,14 @@
 const startBtn = document.getElementById("startBtn");
 
+// ==========================
+// STATE
+// ==========================
 let currentLat = null;
 let currentLon = null;
+
 let currentYaw = 0;
+let currentPitch = 0;
+let currentRoll = 0;
 
 let targetLat = null;
 let targetLon = null;
@@ -62,7 +68,7 @@ function startGPS() {
 }
 
 // ==========================
-// QUATERNION SENSOR (YOUR SYSTEM)
+// QUATERNION SENSOR
 // ==========================
 function startQuaternion() {
   if (sensor) return;
@@ -82,21 +88,82 @@ function startQuaternion() {
       const qz = q[2];
       const qw = q[3];
 
-      // forward vector (camera)
+      // forward + up vectors
       const f = rotateVec(qx, qy, qz, qw, 0, 0, -1);
+      const u = rotateVec(qx, qy, qz, qw, 0, 1, 0);
 
+      // normalize
       const fn = Math.hypot(f.x, f.y, f.z);
       const fx = f.x / fn;
       const fy = f.y / fn;
       const fz = f.z / fn;
 
-      // ✅ CAMERA YAW (correct)
+      const un = Math.hypot(u.x, u.y, u.z);
+      const ux = u.x / un;
+      const uy = u.y / un;
+      const uz = u.z / un;
+
+      // ==========================
+      // YAW
+      // ==========================
       let yaw = Math.atan2(fx, fy) * 180 / Math.PI;
       yaw = (yaw + 360) % 360;
 
-      currentYaw = yaw;
+      // ==========================
+      // PITCH
+      // ==========================
+      let pitch = Math.asin(Math.max(-1, Math.min(1, fz))) * 180 / Math.PI;
 
+      // ==========================
+      // ROLL
+      // ==========================
+      let roll = 0;
+
+      const wx = 0, wy = 0, wz = 1;
+
+      const dot_fu = fx*ux + fy*uy + fz*uz;
+      const u_px = ux - dot_fu * fx;
+      const u_py = uy - dot_fu * fy;
+      const u_pz = uz - dot_fu * fz;
+
+      const dot_fw = fx*wx + fy*wy + fz*wz;
+      const w_px = wx - dot_fw * fx;
+      const w_py = wy - dot_fw * fy;
+      const w_pz = wz - dot_fw * fz;
+
+      const un2 = Math.hypot(u_px, u_py, u_pz);
+      const wn2 = Math.hypot(w_px, w_py, w_pz);
+
+      if (un2 > 1e-6 && wn2 > 1e-6) {
+
+        const ux2 = u_px / un2;
+        const uy2 = u_py / un2;
+        const uz2 = u_pz / un2;
+
+        const wx2 = w_px / wn2;
+        const wy2 = w_py / wn2;
+        const wz2 = w_pz / wn2;
+
+        const dot = ux2*wx2 + uy2*wy2 + uz2*wz2;
+
+        const cx = uy2*wz2 - uz2*wy2;
+        const cy = uz2*wx2 - ux2*wz2;
+        const cz = ux2*wy2 - uy2*wx2;
+
+        const sign = fx*cx + fy*cy + fz*cz;
+
+        roll = Math.atan2(sign, dot) * 180 / Math.PI;
+      }
+
+      // store
+      currentYaw = yaw;
+      currentPitch = pitch;
+      currentRoll = roll;
+
+      // UI
       document.getElementById("yaw").textContent = yaw.toFixed(1);
+      document.getElementById("pitch").textContent = pitch.toFixed(1);
+      document.getElementById("roll").textContent = roll.toFixed(1);
     });
 
     sensor.start();
@@ -108,7 +175,7 @@ function startQuaternion() {
 }
 
 // ==========================
-// ROTATE VECTOR (from your code)
+// ROTATE VECTOR
 // ==========================
 function rotateVec(qx, qy, qz, qw, vx, vy, vz) {
   const tx = 2 * (qy * vz - qz * vy);
@@ -123,7 +190,7 @@ function rotateVec(qx, qy, qz, qw, vx, vy, vz) {
 }
 
 // ==========================
-// BEARING CALCULATION
+// BEARING
 // ==========================
 function getBearing(lat1, lon1, lat2, lon2) {
   const toRad = d => d * Math.PI / 180;
@@ -153,28 +220,33 @@ function updateAR() {
       targetLat, targetLon
     );
 
-    // ✅ CORE AR EQUATION
     let diff = targetBearing - currentYaw;
     diff = ((diff + 540) % 360) - 180;
 
     document.getElementById("bearing").textContent = targetBearing.toFixed(1);
     document.getElementById("relative").textContent = diff.toFixed(1);
 
-    // map angle → screen
+    // screen mapping
     const screenWidth = window.innerWidth;
-    const fov = 35;
+    const screenHeight = window.innerHeight;
 
-    const x = (diff / fov) * screenWidth;
+    const fovX = 35;
+    const fovY = 45;
+
+    const x = (diff / fovX) * screenWidth;
+    const y = (-currentPitch / fovY) * screenHeight;
 
     const marker = document.getElementById("marker");
 
-    // hide if behind camera
     if (Math.abs(diff) > 90) {
       marker.style.display = "none";
     } else {
       marker.style.display = "block";
-      marker.style.transform =
-        `translate(calc(-50% + ${x}px), -50%)`;
+
+      marker.style.transform = `
+        translate(calc(-50% + ${x}px), calc(-50% + ${y}px))
+        rotate(${currentRoll}deg)
+      `;
     }
   }
 

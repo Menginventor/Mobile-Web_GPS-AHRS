@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR GPS Marker</title>
+  <title>AR GPS Marker (Yaw + Pitch + Roll)</title>
   <link rel="stylesheet" href="ar.css">
 </head>
 <body>
 
-  <!-- Camera -->
+  <!-- 🎥 Camera -->
   <video id="camera" autoplay playsinline></video>
 
   <!-- UI -->
@@ -18,15 +18,25 @@
     <div class="info">
       <p>Lat: <span id="lat">-</span></p>
       <p>Lon: <span id="lon">-</span></p>
-      <p>Yaw: <span id="yaw">-</span></p>
-      <p>Target Bearing: <span id="bearing">-</span></p>
-      <p>Relative: <span id="relative">-</span></p>
+
+      <hr>
+
+      <p>Yaw: <span id="yaw">-</span>°</p>
+      <p>Pitch: <span id="pitch">-</span>°</p>
+      <p>Roll: <span id="roll">-</span>°</p>
+
+      <hr>
+
+      <p>Target Bearing: <span id="bearing">-</span>°</p>
+      <p>Relative (Yaw diff): <span id="relative">-</span>°</p>
     </div>
   </div>
 
-  <!-- AR Marker -->
-  <div id="marker">📍</div>
+  <!-- 🎯 AR Marker (wrapper for rotation) -->
+  <div id="markerWrapper">
+    <div id="marker">📍</div>
+  </div>
 
-  <script src="ar.js?v=2"></script>
+  <script src="ar.js?v=4"></script>
 </body>
 </html>
