@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AR Marker URL Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #1e1e1e, #2c2c2c);
+      color: white;
+    }
+
+    /* Center layout */
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Card */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(40, 40, 40, 0.95);
+      padding: 20px;
+      border-radius: 16px;
+
+      box-shadow:
+        0 10px 30px rgba(0,0,0,0.5),
+        inset 0 0 10px rgba(255,255,255,0.05);
+
+      backdrop-filter: blur(10px);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    label {
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0 15px;
+      font-size: 16px;
+
+      border-radius: 8px;
+      border: none;
+
+      background: #444;
+      color: white;
+    }
+
+    input::placeholder {
+      color: #bbb;
+    }
+
+    input:focus {
+      outline: 2px solid #4CAF50;
+      background: #555;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #generateBtn {
+      background: #4CAF50;
+      color: white;
+    }
+
+    #copyBtn {
+      background: #2196F3;
+      color: white;
+    }
+
+    #output {
+      background: #111;
+      padding: 10px;
+      border-radius: 8px;
+      word-break: break-all;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    #openLink {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      color: #4CAF50;
+      text-decoration: none;
+    }
+
+    #openLink:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card">
+
+    <h2>📍 AR Marker Builder</h2>
+
+    <label>Name</label>
+    <input id="name" placeholder="e.g. My Target">
+
+    <label>Latitude</label>
+    <input id="lat" placeholder="e.g. 13.189914">
+
+    <label>Longitude</label>
+    <input id="lon" placeholder="e.g. 100.950628">
+
+    <label>Altitude (meters,optional)</label>
+    <input id="alt" placeholder="e.g. 10">
+
+    <button id="generateBtn">Generate URL</button>
+    <button id="copyBtn">Copy URL</button>
+
+    <div id="output">URL will appear here</div>
+
+    <a id="openLink" href="#" target="_blank">Open AR</a>
+
+  </div>
+</div>
+
+<script>
+  const baseURL = "https://menginventor.github.io/Mobile-Web_GPS-AHRS/ar.html";
+
+  const nameInput = document.getElementById("name");
+  const latInput = document.getElementById("lat");
+  const lonInput = document.getElementById("lon");
+  const altInput = document.getElementById("alt");
+
+  const output = document.getElementById("output");
+  const openLink = document.getElementById("openLink");
+
+  document.getElementById("generateBtn").onclick = () => {
+
+    const name = encodeURIComponent(nameInput.value.trim());
+    const lat = latInput.value.trim();
+    const lon = lonInput.value.trim();
+    const alt = altInput.value.trim();
+
+    if (!lat || !lon) {
+      alert("Latitude and Longitude required");
+      return;
+    }
+
+    let url = `${baseURL}?lat=${lat}&lon=${lon}`;
+
+    if (name) {
+      url += `&name=${name}`;
+    }
+
+    if (alt) {
+      url += `&alt=${alt}`;
+    }
+
+    output.textContent = url;
+    openLink.href = url;
+  };
+
+  document.getElementById("copyBtn").onclick = () => {
+    if (!output.textContent || output.textContent === "URL will appear here") {
+      alert("Generate URL first");
+      return;
+    }
+
+    navigator.clipboard.writeText(output.textContent);
+    alert("Copied!");
+  };
+</script>
+
+</body>
+</html>
