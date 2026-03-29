@@ -391,6 +391,15 @@ function updateAR() {
     } else {
       document.getElementById("deltaAlt").textContent = "N/A";
     }
+// ==========================
+// DELTA PITCH DISPLAY
+// ==========================
+
+    const deltaPitchDeg = pitchRelative * 180 / Math.PI;
+    const signPitch = deltaPitchDeg >= 0 ? "+" : "";
+
+    document.getElementById("deltaPitch").textContent =
+      signPitch + deltaPitchDeg.toFixed(1) + "°";
 
 
     const w = window.innerWidth;
