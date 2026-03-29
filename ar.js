@@ -1,5 +1,8 @@
+
+
 let stream = null;
 let cameraOn = false;
+
 
 const startBtn = document.getElementById("startBtn");
 
@@ -15,7 +18,8 @@ let currentRoll = 0;
 
 let targetLat = null;
 let targetLon = null;
-
+let targetName = "";
+let targetAlt = null;
 let sensor = null;
 
 // ✅ FOV (user-controlled)
@@ -70,8 +74,15 @@ function readURL() {
   targetLat = parseFloat(params.get("lat"));
   targetLon = parseFloat(params.get("lon"));
 
+  // ✅ name
+  targetName = params.get("name") || "";
+
+  // ✅ optional altitude
+  const altParam = params.get("alt");
+  targetAlt = (altParam !== null) ? parseFloat(altParam) : null;
+
   if (!isNaN(targetLat) && !isNaN(targetLon)) {
-    console.log("Target:", targetLat, targetLon);
+    console.log("Target:", targetLat, targetLon, targetName, targetAlt);
   } else {
     alert("No lat/lon in URL");
   }
@@ -331,7 +342,45 @@ function updateAR() {
       : (distance/1000).toFixed(2) + " km";
 
     document.getElementById("distance").textContent = distText;
-    document.getElementById("markerLabel").textContent = distText;
+    //document.getElementById("markerLabel").textContent = distText;
+    let label = distText;
+    // ✅ add altitude if available
+    if (targetAlt !== null) {
+      label += " | " + targetAlt.toFixed(0) + " m";
+    }
+
+    // ✅ add name if available
+    if (targetName) {
+      label = targetName + "\n" + label;
+    }
+
+    document.getElementById("markerLabel").textContent = label;
+    // ==========================
+    // ALTITUDE DISPLAY
+    // ==========================
+
+    // target altitude
+    if (targetAlt !== null) {
+      document.getElementById("targetAlt").textContent =
+        targetAlt.toFixed(1) + " m";
+    } else {
+      document.getElementById("targetAlt").textContent = "N/A";
+    }
+
+    // delta altitude (difference)
+    if (targetAlt !== null && currentAlt !== null) {
+
+      const dAlt = targetAlt - currentAlt;
+
+      const sign = dAlt >= 0 ? "+" : "";
+
+      document.getElementById("deltaAlt").textContent =
+        sign + dAlt.toFixed(1) + " m";
+
+    } else {
+      document.getElementById("deltaAlt").textContent = "N/A";
+    }
+
 
     const w = window.innerWidth;
     const h = window.innerHeight;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AR GPS Marker (Yaw + Pitch + Roll)</title>
-  <link rel="stylesheet" href="ar.css">
+  <link rel="stylesheet" href="ar.css?v=2">
 </head>
 <body>
 
@@ -31,6 +31,8 @@
       <p>Target Bearing: <span id="bearing">-</span>°</p>
       <p>Relative (Yaw diff): <span id="relative">-</span>°</p>
       <p>Distance: <span id="distance">-</span></p>
+      <p>Target Alt: <span id="targetAlt">-</span></p>
+      <p>Δ Alt: <span id="deltaAlt">-</span></p>
     </div>
   </div>
 
@@ -62,6 +64,6 @@
   <!-- ⚙️ Open button -->
   <button id="openFovBtn">⚙️</button>
 
-  <script src="ar.js?v=18"></script>
+  <script src="ar.js?v=19"></script>
 </body>
 </html>

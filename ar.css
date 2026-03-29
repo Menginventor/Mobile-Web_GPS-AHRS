@@ -70,7 +70,10 @@ button {
   padding: 2px 6px;
   background: rgba(0,0,0,0.6);
   border-radius: 6px;
+  white-space: pre-line;   /* 👈 IMPORTANT for \n */
+  text-align: center;
 }
+
 /* FOV popup */
 #settingsPanel {
   position: fixed;
