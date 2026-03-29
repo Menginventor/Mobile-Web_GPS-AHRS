@@ -7,8 +7,10 @@ let currentYaw = 0;
 let targetLat = null;
 let targetLon = null;
 
+let sensor = null;
+
 // ==========================
-// READ URL PARAM
+// READ TARGET FROM URL
 // ==========================
 function readURL() {
   const params = new URLSearchParams(window.location.search);
@@ -30,7 +32,7 @@ startBtn.addEventListener("click", async () => {
 
   await startCamera();
   startGPS();
-  startOrientation();
+  startQuaternion();
 
   requestAnimationFrame(updateAR);
 });
@@ -60,25 +62,68 @@ function startGPS() {
 }
 
 // ==========================
-// ORIENTATION (COMPASS)
+// QUATERNION SENSOR (YOUR SYSTEM)
 // ==========================
-function startOrientation() {
+function startQuaternion() {
+  if (sensor) return;
 
-  if (typeof DeviceOrientationEvent.requestPermission === "function") {
-    DeviceOrientationEvent.requestPermission();
+  try {
+    sensor = new AbsoluteOrientationSensor({
+      frequency: 60,
+      referenceFrame: "device"
+    });
+
+    sensor.addEventListener("reading", () => {
+
+      const q = sensor.quaternion;
+
+      const qx = q[0];
+      const qy = q[1];
+      const qz = q[2];
+      const qw = q[3];
+
+      // forward vector (camera)
+      const f = rotateVec(qx, qy, qz, qw, 0, 0, -1);
+
+      const fn = Math.hypot(f.x, f.y, f.z);
+      const fx = f.x / fn;
+      const fy = f.y / fn;
+      const fz = f.z / fn;
+
+      // ✅ CAMERA YAW (correct)
+      let yaw = Math.atan2(fx, fy) * 180 / Math.PI;
+      yaw = (yaw + 360) % 360;
+
+      currentYaw = yaw;
+
+      document.getElementById("yaw").textContent = yaw.toFixed(1);
+    });
+
+    sensor.start();
+
+  } catch (err) {
+    alert("Orientation sensor not supported");
+    console.warn(err);
   }
-
-  window.addEventListener("deviceorientationabsolute", (e) => {
-
-    if (e.alpha !== null) {
-      currentYaw = e.alpha; // compass heading
-      document.getElementById("yaw").textContent = currentYaw.toFixed(1);
-    }
-  });
 }
 
 // ==========================
-// BEARING CALC
+// ROTATE VECTOR (from your code)
+// ==========================
+function rotateVec(qx, qy, qz, qw, vx, vy, vz) {
+  const tx = 2 * (qy * vz - qz * vy);
+  const ty = 2 * (qz * vx - qx * vz);
+  const tz = 2 * (qx * vy - qy * vx);
+
+  return {
+    x: vx + qw * tx + (qy * tz - qz * ty),
+    y: vy + qw * ty + (qz * tx - qx * tz),
+    z: vz + qw * tz + (qx * ty - qy * tx)
+  };
+}
+
+// ==========================
+// BEARING CALCULATION
 // ==========================
 function getBearing(lat1, lon1, lat2, lon2) {
   const toRad = d => d * Math.PI / 180;
@@ -97,28 +142,40 @@ function getBearing(lat1, lon1, lat2, lon2) {
 }
 
 // ==========================
-// AR UPDATE LOOP
+// AR LOOP
 // ==========================
 function updateAR() {
 
   if (currentLat !== null && targetLat !== null) {
 
-    const bearing = getBearing(currentLat, currentLon, targetLat, targetLon);
+    const targetBearing = getBearing(
+      currentLat, currentLon,
+      targetLat, targetLon
+    );
 
-    let diff = bearing - currentYaw;
+    // ✅ CORE AR EQUATION
+    let diff = targetBearing - currentYaw;
     diff = ((diff + 540) % 360) - 180;
 
-    document.getElementById("bearing").textContent = bearing.toFixed(1);
+    document.getElementById("bearing").textContent = targetBearing.toFixed(1);
     document.getElementById("relative").textContent = diff.toFixed(1);
 
-    // map to screen
+    // map angle → screen
     const screenWidth = window.innerWidth;
     const fov = 60;
 
     const x = (diff / fov) * screenWidth;
 
     const marker = document.getElementById("marker");
-    marker.style.transform = `translate(calc(-50% + ${x}px), -50%)`;
+
+    // hide if behind camera
+    if (Math.abs(diff) > 90) {
+      marker.style.display = "none";
+    } else {
+      marker.style.display = "block";
+      marker.style.transform =
+        `translate(calc(-50% + ${x}px), -50%)`;
+    }
   }
 
   requestAnimationFrame(updateAR);
