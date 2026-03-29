@@ -62,7 +62,7 @@ button {
 
 /* Distance label */
 #markerLabel {
-  font-size: 14px;
+  font-size: 24px;
   margin-top: -6px;
   padding: 2px 6px;
   background: rgba(0,0,0,0.6);

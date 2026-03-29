@@ -99,11 +99,31 @@ async function startCamera() {
 // ==========================
 function startGPS() {
   navigator.geolocation.watchPosition((pos) => {
+
     currentLat = pos.coords.latitude;
     currentLon = pos.coords.longitude;
 
+    const altitude = pos.coords.altitude;
+    const accuracy = pos.coords.altitudeAccuracy;
+
     document.getElementById("lat").textContent = currentLat.toFixed(6);
     document.getElementById("lon").textContent = currentLon.toFixed(6);
+
+    // altitude display
+    if (altitude !== null) {
+      document.getElementById("altitude").textContent =
+        altitude.toFixed(1) + " m";
+    } else {
+      document.getElementById("altitude").textContent = "N/A";
+    }
+
+    // (optional debug)
+    console.log("Altitude:", altitude, "Accuracy:", accuracy);
+
+  }, (err) => {
+    console.warn("GPS error:", err);
+  }, {
+    enableHighAccuracy: true
   });
 }
 
