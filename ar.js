@@ -11,6 +11,7 @@ const startBtn = document.getElementById("startBtn");
 // ==========================
 let currentLat = null;
 let currentLon = null;
+let currentAlt = null;
 
 let currentYaw = 0;
 let currentPitch = 0;
@@ -139,6 +140,7 @@ function startGPS() {
     currentLon = pos.coords.longitude;
 
     const altitude = pos.coords.altitude;
+    currentAlt = altitude; // ✅ ADD THIS
     const accuracy = pos.coords.altitudeAccuracy;
 
     document.getElementById("lat").textContent = currentLat.toFixed(6);
@@ -331,6 +333,15 @@ function updateAR() {
     const bearing = getBearing(currentLat, currentLon, targetLat, targetLon);
     const distance = getDistance(currentLat, currentLon, targetLat, targetLon);
 
+    // ✅ compute delta altitude safely
+    let deltaAlt = 0;
+    if (targetAlt !== null && currentAlt !== null) {
+      deltaAlt = targetAlt - currentAlt;
+    }
+
+    // ✅ compute pitch from altitude difference
+    const pitchTarget = computePitch(deltaAlt, distance);
+
     let diff = bearing - currentYaw;
     diff = ((diff + 540) % 360) - 180;
 
@@ -388,7 +399,10 @@ function updateAR() {
     const fovY = fovX * (h / w);
 
     const x0 = (diff / fovX) * w;
-    const y0 = (currentPitch / fovY) * h;
+    // const y0 = (currentPitch / fovY) * h; // old ver static pitch
+    const pitchRelative = pitchTarget - (currentPitch * Math.PI / 180);
+
+    const y0 = (pitchRelative / (fovY * Math.PI / 180)) * h;
 
     const r = currentRoll * Math.PI / 180;
 
@@ -414,6 +428,13 @@ function updateAR() {
 
   requestAnimationFrame(updateAR);
 }
+
+function computePitch(deltaAlt, distance) {
+  if (distance < 1) return 0; // avoid crazy angle when very close
+
+  return Math.atan2(deltaAlt, distance); // radians
+}
+
 
 // ==========================
 // INIT
