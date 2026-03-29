@@ -35,11 +35,9 @@ function readURL() {
 // START BUTTON
 // ==========================
 startBtn.addEventListener("click", async () => {
-
   await startCamera();
   startGPS();
   startQuaternion();
-
   requestAnimationFrame(updateAR);
 });
 
@@ -50,7 +48,6 @@ async function startCamera() {
   const stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: "environment" }
   });
-
   document.getElementById("camera").srcObject = stream;
 }
 
@@ -82,17 +79,11 @@ function startQuaternion() {
     sensor.addEventListener("reading", () => {
 
       const q = sensor.quaternion;
+      const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
 
-      const qx = q[0];
-      const qy = q[1];
-      const qz = q[2];
-      const qw = q[3];
-
-      // forward + up vectors
       const f = rotateVec(qx, qy, qz, qw, 0, 0, -1);
       const u = rotateVec(qx, qy, qz, qw, 0, 1, 0);
 
-      // normalize
       const fn = Math.hypot(f.x, f.y, f.z);
       const fx = f.x / fn;
       const fy = f.y / fn;
@@ -103,20 +94,14 @@ function startQuaternion() {
       const uy = u.y / un;
       const uz = u.z / un;
 
-      // ==========================
       // YAW
-      // ==========================
       let yaw = Math.atan2(fx, fy) * 180 / Math.PI;
       yaw = (yaw + 360) % 360;
 
-      // ==========================
       // PITCH
-      // ==========================
       let pitch = Math.asin(Math.max(-1, Math.min(1, fz))) * 180 / Math.PI;
 
-      // ==========================
       // ROLL
-      // ==========================
       let roll = 0;
 
       const wx = 0, wy = 0, wz = 1;
@@ -135,7 +120,6 @@ function startQuaternion() {
       const wn2 = Math.hypot(w_px, w_py, w_pz);
 
       if (un2 > 1e-6 && wn2 > 1e-6) {
-
         const ux2 = u_px / un2;
         const uy2 = u_py / un2;
         const uz2 = u_pz / un2;
@@ -155,12 +139,10 @@ function startQuaternion() {
         roll = Math.atan2(sign, dot) * 180 / Math.PI;
       }
 
-      // store
       currentYaw = yaw;
       currentPitch = pitch;
       currentRoll = roll;
 
-      // UI
       document.getElementById("yaw").textContent = yaw.toFixed(1);
       document.getElementById("pitch").textContent = pitch.toFixed(1);
       document.getElementById("roll").textContent = roll.toFixed(1);
@@ -170,7 +152,6 @@ function startQuaternion() {
 
   } catch (err) {
     alert("Orientation sensor not supported");
-    console.warn(err);
   }
 }
 
@@ -204,8 +185,24 @@ function getBearing(lat1, lon1, lat2, lon2) {
   const x = Math.cos(φ1) * Math.sin(φ2) -
             Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
 
-  let θ = Math.atan2(y, x);
-  return (toDeg(θ) + 360) % 360;
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+// ==========================
+// DISTANCE
+// ==========================
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon/2)**2;
+
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 // ==========================
@@ -215,33 +212,35 @@ function updateAR() {
 
   if (currentLat !== null && targetLat !== null) {
 
-    const targetBearing = getBearing(
-      currentLat, currentLon,
-      targetLat, targetLon
-    );
+    const bearing = getBearing(currentLat, currentLon, targetLat, targetLon);
+    const distance = getDistance(currentLat, currentLon, targetLat, targetLon);
 
-    let diff = targetBearing - currentYaw;
+    let diff = bearing - currentYaw;
     diff = ((diff + 540) % 360) - 180;
 
-    document.getElementById("bearing").textContent = targetBearing.toFixed(1);
+    document.getElementById("bearing").textContent = bearing.toFixed(1);
     document.getElementById("relative").textContent = diff.toFixed(1);
 
-    // screen mapping
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
+    // distance UI
+    const distText = distance < 1000
+      ? distance.toFixed(1) + " m"
+      : (distance/1000).toFixed(2) + " km";
 
-    const fovX = 35;
-    const fovY = 70;
+    document.getElementById("distance").textContent = distText;
+    document.getElementById("markerLabel").textContent = distText;
 
-    // base offsets
-    const x0 = (diff / fovX) * screenWidth;
-    // IMPORTANT: pitch sign (camera looks down = positive pitch → marker goes down)
-    const y0 = (currentPitch / fovY) * screenHeight;
+    // projection
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
-    // convert roll to radians
+    const fovX = 60;
+    const fovY = 60 * (h / w);
+
+    const x0 = (diff / fovX) * w;
+    const y0 = (currentPitch / fovY) * h;
+
     const r = currentRoll * Math.PI / 180;
 
-    // rotate screen axes
     const x = x0 * Math.cos(r) - y0 * Math.sin(r);
     const y = x0 * Math.sin(r) + y0 * Math.cos(r);
 
@@ -252,9 +251,12 @@ function updateAR() {
     } else {
       marker.style.display = "block";
 
+      const scale = Math.max(0.6, Math.min(2.5, 200 / distance));
+
       marker.style.transform = `
         translate(calc(-50% + ${x}px), calc(-50% + ${y}px))
         rotate(${currentRoll}deg)
+        scale(${scale})
       `;
     }
   }

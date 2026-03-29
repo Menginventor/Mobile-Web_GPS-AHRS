@@ -29,14 +29,18 @@
 
       <p>Target Bearing: <span id="bearing">-</span>°</p>
       <p>Relative (Yaw diff): <span id="relative">-</span>°</p>
+      <p>Distance: <span id="distance">-</span></p>
     </div>
   </div>
 
-  <!-- 🎯 AR Marker (wrapper for rotation) -->
+  <!-- 🎯 AR Marker -->
   <div id="markerWrapper">
-    <div id="marker">📍</div>
+    <div id="marker">
+      <div class="pin">📍</div>
+      <div id="markerLabel">-</div>
+    </div>
   </div>
 
-  <script src="ar.js?v=9"></script>
+  <script src="ar.js?v=10"></script>
 </body>
 </html>
