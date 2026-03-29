@@ -399,11 +399,13 @@ function updateAR() {
     const fovY = fovX * (h / w);
 
     const x0 = (diff / fovX) * w;
-    // const y0 = (currentPitch / fovY) * h; // old ver static pitch
-    const pitchRelative = pitchTarget - (currentPitch * Math.PI / 180);
 
-    const y0 = (pitchRelative / (fovY * Math.PI / 180)) * h;
+    //const pitchRelative = pitchTarget - (currentPitch * Math.PI / 180);
+    const pitchRelative = pitchTarget + (currentPitch * Math.PI / 180);
 
+    const y0 = (pitchRelative / (fovY * Math.PI / 180)) * h; // new ver, wrong behave
+
+    // const y0 = (currentPitch / fovY) * h; // old ver static pitch, correctly behave
     const r = currentRoll * Math.PI / 180;
 
     const x = x0 * Math.cos(r) - y0 * Math.sin(r);
