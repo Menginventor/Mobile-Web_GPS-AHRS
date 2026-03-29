@@ -1,7 +1,9 @@
+
 body {
   margin: 0;
   overflow: hidden;
   font-family: sans-serif;
+
 }
 
 /* Camera full screen */
@@ -12,6 +14,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+    background: #444;
 }
 
 /* UI overlay */
