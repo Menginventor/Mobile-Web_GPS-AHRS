@@ -1,4 +1,37 @@
+window.onerror = function (msg, source, lineno, colno, error) {
+  showError(`JS Error: ${msg}\nLine: ${lineno}`);
+};
 
+window.addEventListener("unhandledrejection", function (event) {
+  showError(`Promise Error: ${event.reason}`);
+});
+
+function showError(text) {
+  let box = document.getElementById("errorBox");
+
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "errorBox";
+
+    box.style.position = "fixed";
+    box.style.bottom = "0";
+    box.style.left = "0";
+    box.style.width = "100%";
+    box.style.maxHeight = "40%";
+    box.style.overflow = "auto";
+
+    box.style.background = "rgba(0,0,0,0.85)";
+    box.style.color = "#ff5555";
+    box.style.fontSize = "12px";
+    box.style.zIndex = "99999";
+    box.style.padding = "8px";
+    box.style.whiteSpace = "pre-wrap";
+
+    document.body.appendChild(box);
+  }
+
+  box.textContent += "\n" + text;
+}
 
 let stream = null;
 let cameraOn = false;
