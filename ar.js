@@ -37,22 +37,29 @@ let targetAlt = null;
 let sensor = null;
 
 // ✅ FOV (user-controlled)
-let fovX = 60;
+let fovX = 30;
+let fovY = null; // null = auto
 
 // ==========================
 // FOV STORAGE
 // ==========================
 function loadFOV() {
-  const saved = localStorage.getItem("fovX");
-  if (saved) {
-    fovX = parseFloat(saved);
-  }
+  const savedX = localStorage.getItem("fovX");
+  const savedY = localStorage.getItem("fovY");
+
+  if (savedX) fovX = parseFloat(savedX);
+  if (savedY) fovY = parseFloat(savedY);
 }
 
 function saveFOV() {
   localStorage.setItem("fovX", fovX);
-}
 
+  if (fovY !== null) {
+    localStorage.setItem("fovY", fovY);
+  } else {
+    localStorage.removeItem("fovY"); // fallback mode
+  }
+}
 // ==========================
 // FOV UI
 // ==========================
@@ -61,22 +68,26 @@ const openBtn = document.getElementById("openFovBtn");
 const closeBtn = document.getElementById("closeFovBtn");
 const saveBtn = document.getElementById("saveFovBtn");
 const fovXInput = document.getElementById("fovXInput");
-
+const fovYInput = document.getElementById("fovYInput");
 if (openBtn) {
-  openBtn.onclick = () => {
-    panel.classList.remove("hidden");
-    fovXInput.value = fovX;
-  };
-
+openBtn.onclick = () => {
+      panel.classList.remove("hidden");
+      fovXInput.value = fovX;
+      fovYInput.value = fovY ?? ""; // empty = auto
+    };
   closeBtn.onclick = () => {
     panel.classList.add("hidden");
   };
 
-  saveBtn.onclick = () => {
-    fovX = parseFloat(fovXInput.value);
-    saveFOV();
-    panel.classList.add("hidden");
-  };
+    saveBtn.onclick = () => {
+      fovX = parseFloat(fovXInput.value);
+
+      const yVal = parseFloat(fovYInput.value);
+      fovY = isNaN(yVal) ? null : yVal;
+
+      saveFOV();
+      panel.classList.add("hidden");
+    };
 }
 
 // ==========================
@@ -416,9 +427,18 @@ function updateAR() {
     const w = window.innerWidth;
     const h = window.innerHeight;
 
-    const fovY = fovX * (h / w);
+    const fovX_rad = fovX * Math.PI / 180;
 
-    const x0 = (diff / fovX) * w;
+    let fovY_rad;
+
+    if (fovY !== null) {
+      fovY_rad = fovY * Math.PI / 180; // user-defined
+    } else {
+      fovY_rad = fovX_rad * (h / w);   // auto fallback
+    }
+
+
+    const x0 = (diffRad / fovX_rad) * w;
 
     //const pitchRelative = pitchTarget - (currentPitch * Math.PI / 180);
     const pitchRelative = -pitchTarget + (currentPitch * Math.PI / 180);
@@ -431,7 +451,7 @@ function updateAR() {
 
     document.getElementById("deltaPitch").textContent = signPitch + deltaPitchDisplay.toFixed(1) + "°";
 
-    const y0 = (pitchRelative / (fovY * Math.PI / 180)) * h; // new ver, wrong behave
+    const y0 = (pitchRelative / fovY_rad) * h;
 
     // const y0 = (currentPitch / fovY) * h; // old ver static pitch, correctly behave
     const r = currentRoll * Math.PI / 180;
