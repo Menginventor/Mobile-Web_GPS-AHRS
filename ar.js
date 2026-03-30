@@ -247,7 +247,7 @@ function startQuaternion() {
       document.getElementById("pitch").textContent = pitch.toFixed(1);
       document.getElementById("roll").textContent = roll.toFixed(1);
       //
-    const horizon = document.getElementById("horizon");
+   const horizon = document.getElementById("horizon");
 
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -268,6 +268,7 @@ function startQuaternion() {
       translate(-50%, calc(-50% + ${y0}px))
       rotate(${currentRoll}deg)
     `;
+    });
 
     sensor.start();
 
