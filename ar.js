@@ -247,24 +247,27 @@ function startQuaternion() {
       document.getElementById("pitch").textContent = pitch.toFixed(1);
       document.getElementById("roll").textContent = roll.toFixed(1);
       //
-      const horizon = document.getElementById("horizon");
+    const horizon = document.getElementById("horizon");
 
-    // convert roll to radians
-    const r = currentRoll * Math.PI / 180;
-
-    // optional: include pitch shift
+    const w = window.innerWidth;
     const h = window.innerHeight;
-    const fovY = fovX * (h / window.innerWidth);
 
-    // move horizon with pitch
-    const yOffset = (currentPitch / fovY) * h;
+    // FOV in radians
+    const fovX_rad = fovX * Math.PI / 180;
+    const fovY_rad = fovX_rad * (h / w);
 
-    // apply transform
+    // horizon pitch (target = 0)
+    const pitchRelative_horizon =
+      - (currentPitch * Math.PI / 180);
+
+    // project to screen
+    const y0 = (pitchRelative_horizon / fovY_rad) * h;
+
+    // apply roll rotation SAME as marker
     horizon.style.transform = `
-      translate(-50%, calc(-50% + ${yOffset}px))
+      translate(-50%, calc(-50% + ${y0}px))
       rotate(${currentRoll}deg)
     `;
-    });
 
     sensor.start();
 
