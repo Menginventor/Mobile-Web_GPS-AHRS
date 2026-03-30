@@ -247,28 +247,33 @@ function startQuaternion() {
       document.getElementById("pitch").textContent = pitch.toFixed(1);
       document.getElementById("roll").textContent = roll.toFixed(1);
       //
-   const horizon = document.getElementById("horizon");
+        const horizon = document.getElementById("horizon");
 
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
 
-    // FOV in radians
-    const fovX_rad = fovX * Math.PI / 180;
-    const fovY_rad = fovX_rad * (h / w);
+        // FOV
+        const fovX_rad = fovX * Math.PI / 180;
+        const fovY_rad = fovX_rad * (h / w);
 
-    // horizon pitch (target = 0)
-    const pitchRelative_horizon =  (currentPitch * Math.PI / 180);
+        // horizon = pitchTarget = 0
+        const pitchRelative = 0 - (currentPitch * Math.PI / 180);
 
-    // project to screen
-    const y0 = (pitchRelative_horizon / fovY_rad) * h;
+        // project into screen space
+        const y0 = (pitchRelative / fovY_rad) * h;
+        const x0 = 0; // horizon is centered horizontally
 
-    // apply roll rotation SAME as marker
-    horizon.style.transform = `
-      translate(-50%, calc(-50% + ${y0}px))
-      rotate(${currentRoll}deg)
-    `;
-    });
+        // apply SAME rotation as marker
+        const r = currentRoll * Math.PI / 180;
 
+        const x = x0 * Math.cos(r) - y0 * Math.sin(r);
+        const y = x0 * Math.sin(r) + y0 * Math.cos(r);
+
+        // apply transform
+        horizon.style.transform = `
+          translate(calc(-50% + ${x}px), calc(-50% + ${y}px))
+          rotate(${currentRoll}deg)
+        `;
     sensor.start();
 
   } catch (err) {
