@@ -412,6 +412,7 @@ function updateAR() {
     let diff = bearing - currentYaw;
     diff = ((diff + 540) % 360) - 180;
 
+    const diffRad = diff * Math.PI / 180;
     document.getElementById("bearing").textContent = bearing.toFixed(1);
     document.getElementById("relative").textContent = diff.toFixed(1);
 
