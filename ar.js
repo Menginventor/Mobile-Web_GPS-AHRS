@@ -451,7 +451,6 @@ function updateAR() {
       marker.style.transform = `
         translate(calc(-50% + ${x}px), calc(-50% + ${y}px))
         rotate(${currentRoll}deg)
-        scale(${scale})
       `;
     }
   }
