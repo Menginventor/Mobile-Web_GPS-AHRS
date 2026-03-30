@@ -421,7 +421,7 @@ function updateAR() {
     const x0 = (diff / fovX) * w;
 
     //const pitchRelative = pitchTarget - (currentPitch * Math.PI / 180);
-    const pitchRelative = pitchTarget + (currentPitch * Math.PI / 180);
+    const pitchRelative = -pitchTarget + (currentPitch * Math.PI / 180);
     // ==========================
     // DELTA PITCH DISPLAY
     // ==========================
