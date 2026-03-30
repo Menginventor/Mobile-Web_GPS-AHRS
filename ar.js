@@ -257,8 +257,7 @@ function startQuaternion() {
     const fovY_rad = fovX_rad * (h / w);
 
     // horizon pitch (target = 0)
-    const pitchRelative_horizon =
-      - (currentPitch * Math.PI / 180);
+    const pitchRelative_horizon =  (currentPitch * Math.PI / 180);
 
     // project to screen
     const y0 = (pitchRelative_horizon / fovY_rad) * h;
