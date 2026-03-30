@@ -138,3 +138,16 @@ button {
   z-index: 4;
   pointer-events: none;
 }
+
+.info {
+  background: rgba(0, 0, 0, 0.2);  /* transparent dark */
+  color: white;                    /* high contrast text */
+  padding: 10px;
+  border-radius: 10px;
+
+  backdrop-filter: blur(6px);      /* 🔥 nice glass effect (optional) */
+  -webkit-backdrop-filter: blur(6px);
+
+  font-size: 14px;
+  line-height: 1.4;
+}

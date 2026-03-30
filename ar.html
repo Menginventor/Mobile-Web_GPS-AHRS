@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AR GPS Marker (Yaw + Pitch + Roll)</title>
-  <link rel="stylesheet" href="ar.css?v=2">
+  <link rel="stylesheet" href="ar.css?v=3">
 </head>
 <body>
 
@@ -14,9 +14,9 @@
   <!-- UI -->
   <div class="ui">
     <button id="startBtn">Start AR</button>
-
-    <div class="info">
-      <p>Version 0.30</p>
+    <button id="toggleInfoBtn">Hide info</button>
+    <div class="info" id="infoPanel">
+      <p>Version 0.31</p>
       <p>Lat: <span id="lat">-</span></p>
       <p>Lon: <span id="lon">-</span></p>
       <p>Alt: <span id="altitude">-</span></p>

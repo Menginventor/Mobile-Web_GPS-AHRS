@@ -6,6 +6,19 @@ let cameraOn = false;
 
 const startBtn = document.getElementById("startBtn");
 
+const toggleBtn = document.getElementById("toggleInfoBtn");
+const infoPanel = document.getElementById("infoPanel");
+
+let infoVisible = true;
+
+toggleBtn.onclick = () => {
+  infoVisible = !infoVisible;
+
+  infoPanel.style.display = infoVisible ? "block" : "none";
+
+  toggleBtn.textContent = infoVisible ? "Hide info" : "Show info";
+};
+
 // ==========================
 // STATE
 // ==========================
@@ -365,10 +378,6 @@ function updateAR() {
     document.getElementById("distance").textContent = distText;
     //document.getElementById("markerLabel").textContent = distText;
     let label = distText;
-    // ✅ add altitude if available
-    if (targetAlt !== null) {
-      label += " | " + targetAlt.toFixed(0) + " m";
-    }
 
     // ✅ add name if available
     if (targetName) {
